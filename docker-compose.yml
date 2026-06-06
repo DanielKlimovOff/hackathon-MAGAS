@@ -1,4 +1,18 @@
 services:
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: ujin_nginx
+    restart: unless-stopped
+    ports:
+      - "${NGINX_PORT}:80"
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      backend:
+        condition: service_started
+      frontend:
+        condition: service_started
+
   postgres:
     image: postgres:17
     container_name: ujin_postgres
@@ -19,6 +33,22 @@ services:
       timeout: 5s
       retries: 10
       start_period: 5s
+
+  redis:
+    image: redis:8-alpine
+    container_name: ujin_redis
+    restart: unless-stopped
+    ports:
+      - "${REDIS_PORT}:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 3s
 
   backend:
     image: golang:1.26.2
