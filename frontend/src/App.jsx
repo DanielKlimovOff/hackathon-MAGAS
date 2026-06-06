@@ -5,7 +5,6 @@ import {
   Car,
   ChevronLeft,
   ChevronRight,
-  CloudSun,
   DoorOpen,
   Grid2X2Plus,
   Home,
@@ -113,7 +112,6 @@ const groupTitles = {
   hall: 'Холлы',
   lift: 'Лифты',
   parking: 'Парковки',
-  weather: 'Погода',
   reception: 'Ресепшн',
   info: 'Инфо',
 }
@@ -234,15 +232,6 @@ const screenDevices = {
         location: 'Выезд',
         status: 'online',
         template: 'Погода',
-      },
-    ],
-    weather: [
-      {
-        id: '#WT-001',
-        name: 'Weather - общий',
-        location: 'Все экраны дома',
-        status: 'online',
-        template: 'Температура',
       },
     ],
   },
@@ -373,15 +362,6 @@ const screenDevices = {
         template: 'RSS-лента',
       },
     ],
-    weather: [
-      {
-        id: '#VS-WT-001',
-        name: 'Weather - башня',
-        location: 'Все экраны дома',
-        status: 'online',
-        template: 'Температура',
-      },
-    ],
   },
 }
 
@@ -415,14 +395,6 @@ const houses = [
         status: 'online',
         audience: 'Минус первый этаж',
         widgets: ['Свободные места', 'Кладовые', 'Погода'],
-      },
-      {
-        id: 'weather',
-        label: 'Погода',
-        icon: CloudSun,
-        status: 'draft',
-        audience: 'Все экраны дома',
-        widgets: ['Температура', 'Осадки', 'Ветер'],
       },
     ],
   },
@@ -543,14 +515,6 @@ const houses = [
         status: 'draft',
         audience: 'Общие экраны',
         widgets: ['Постоянная информация', 'Бонусы партнеров', 'RSS-лента'],
-      },
-      {
-        id: 'weather',
-        label: 'Погода',
-        icon: CloudSun,
-        status: 'online',
-        audience: 'Все экраны дома',
-        widgets: ['Температура', 'Осадки', 'Ветер'],
       },
     ],
   },
