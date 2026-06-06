@@ -18,6 +18,7 @@ import {
   UserRound,
   LogOut,
 } from 'lucide-react'
+import { assignTemplate, login, logout, register } from './services/api'
 import './App.css'
 
 function AuthScreen({ mode, onModeChange, onSubmit }) {
@@ -38,22 +39,22 @@ function AuthScreen({ mode, onModeChange, onSubmit }) {
 
               <label className="auth-field">
                 <span>Фамилия</span>
-                <input placeholder="Введите фамилию" />
+                <input name="lastName" placeholder="Введите фамилию" />
               </label>
 
               <label className="auth-field">
                 <span>Email</span>
-                <input type="email" placeholder="Введите почту" />
+                <input name="email" type="email" placeholder="Введите почту" />
               </label>
 
               <label className="auth-field">
                 <span>Пароль</span>
-                <input type="password" placeholder="Введите пароль" />
+                <input name="password" type="password" placeholder="Введите пароль" />
               </label>
 
               <label className="auth-field">
                 <span>Подтвердите пароль</span>
-                <input type="password" placeholder="Введите пароль" />
+                <input name="passwordConfirm" type="password" placeholder="Введите пароль" />
               </label>
 
               <label className="auth-consent">
@@ -77,7 +78,7 @@ function AuthScreen({ mode, onModeChange, onSubmit }) {
 
               <label className="auth-field">
                 <span>Пароль</span>
-                <input type="password" placeholder="Введите пароль" />
+                <input name="password" type="password" placeholder="Введите пароль" />
               </label>
 
               <button className="auth-submit" type="submit">
@@ -98,37 +99,6 @@ function AuthScreen({ mode, onModeChange, onSubmit }) {
         )}
       </div>
     </main>
-  )
-}
-
-function DiamondAlertIcon({ size = 22, strokeWidth = 2 }) {
-  return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="none"
-      aria-hidden="true"
-    >
-      <path
-        d="M12 2.5 21.5 12 12 21.5 2.5 12 12 2.5Z"
-        stroke="currentColor"
-        strokeWidth={strokeWidth}
-        strokeLinejoin="round"
-      />
-      <path
-        d="M12 7.5v6"
-        stroke="currentColor"
-        strokeWidth={strokeWidth}
-        strokeLinecap="round"
-      />
-      <path
-        d="M12 17h.01"
-        stroke="currentColor"
-        strokeWidth={strokeWidth + 1.5}
-        strokeLinecap="round"
-      />
-    </svg>
   )
 }
 
@@ -341,23 +311,70 @@ function App() {
     })
   }
 
+  async function handleAuthSubmit(event) {
+    event.preventDefault()
+
+    const formData = new FormData(event.currentTarget)
+    const nextName =
+      authMode === 'register' ? formData.get('firstName') : formData.get('login')
+
+    const payload =
+      authMode === 'register'
+        ? {
+            firstName: formData.get('firstName'),
+            lastName: formData.get('lastName'),
+            email: formData.get('email'),
+            password: formData.get('password'),
+            passwordConfirm: formData.get('passwordConfirm'),
+          }
+        : {
+            login: formData.get('login'),
+            password: formData.get('password'),
+          }
+
+    try {
+      if (authMode === 'register') {
+        await register(payload)
+      } else {
+        await login(payload)
+      }
+    } catch (error) {
+      console.warn('Auth API is not ready yet, using demo mode.', error)
+    }
+
+    setCurrentUserName(nextName || 'Admin')
+    setIsAuthenticated(true)
+  }
+
+  async function handleLogout() {
+    try {
+      await logout()
+    } catch (error) {
+      console.warn('Logout API is not ready yet, using demo mode.', error)
+    }
+
+    setIsAuthenticated(false)
+    setAuthMode('login')
+  }
+
+  async function handleSendTemplate() {
+    try {
+      await assignTemplate({
+        houseId: selectedHouse.id,
+        displayIds: selectedHouse.displays.map((display) => display.id),
+        templateId: 'default-dashboard',
+      })
+    } catch (error) {
+      console.warn('Template API is not ready yet, using demo mode.', error)
+    }
+  }
+
   if (!isAuthenticated) {
   return (
     <AuthScreen
       mode={authMode}
       onModeChange={setAuthMode}
-      onSubmit={(event) => {
-        event.preventDefault()
-
-        const formData = new FormData(event.currentTarget)
-        const nextName =
-          authMode === 'register'
-            ? formData.get('firstName')
-            : formData.get('login')
-
-        setCurrentUserName(nextName || 'Admin')
-        setIsAuthenticated(true)
-      }}
+      onSubmit={handleAuthSubmit}
     />
   )
 }
@@ -408,10 +425,7 @@ function App() {
               className="logout-button"
               type="button"
               aria-label="Выйти из аккаунта"
-              onClick={() => {
-                setIsAuthenticated(false)
-                setAuthMode('login')
-              }}
+              onClick={handleLogout}
             >
               <LogOut size={22} strokeWidth={2.2} />
             </button>
@@ -492,7 +506,7 @@ function App() {
                     {selectedHouse.address}
                   </p>
                 </div>
-                <button className="send-template-button" type="button">
+                <button className="send-template-button" type="button" onClick={handleSendTemplate}>
                   Отправить шаблон
                 </button>
               </div>
