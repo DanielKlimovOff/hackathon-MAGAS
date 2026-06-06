@@ -13,7 +13,6 @@ import {
   MapPin,
   Monitor,
   Newspaper,
-  Plus,
   Settings,
   Siren,
   UserRound,
@@ -441,11 +440,6 @@ function App() {
                   <h2>Подключенные дома</h2>
                   <p>Адреса, группы экранов и шаблоны для дисплеев ЖК</p>
                 </div>
-
-                <button className="add-house-button" type="button">
-                  <Plus size={24} strokeWidth={2.6} />
-                  <span>Добавить дом</span>
-                </button>
               </section>
 
               <section className="houses-carousel" aria-label="Подключенные дома">
