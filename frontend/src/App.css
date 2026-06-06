@@ -1323,3 +1323,27 @@
   color: #b4bbbd;
   font-weight: 900;
 }
+
+.emergency-group-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.emergency-group-picker button {
+  min-height: 38px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 8px;
+  color: #8d989b;
+  background: #f0f2f5;
+  cursor: pointer;
+  font-weight: 900;
+}
+
+.emergency-group-picker button.is-active {
+  color: #0d2930;
+  background: rgba(68, 216, 241, 0.18);
+  box-shadow: inset 0 0 0 1px #44d8f1;
+}
