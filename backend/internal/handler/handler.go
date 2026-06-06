@@ -51,7 +51,6 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 		Path:     "/",
 		HttpOnly: true,
 		SameSite: http.SameSiteStrictMode,
-		Secure:   true,
 	}
 	http.SetCookie(w, authCookie)
 
@@ -77,7 +76,6 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 		Path:     "/",
 		HttpOnly: true,
 		SameSite: http.SameSiteStrictMode,
-		Secure:   true,
 	}
 	http.SetCookie(w, authCookie)
 
@@ -93,7 +91,6 @@ func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
 		Expires:  time.Unix(0, 0),
 		HttpOnly: true,
 		SameSite: http.SameSiteStrictMode,
-		Secure:   true,
 	}
 
 	http.SetCookie(w, cookie)
@@ -141,7 +138,6 @@ func (h *Handler) NewScreen(w http.ResponseWriter, r *http.Request) {
 		Path:     "/",
 		HttpOnly: true,
 		SameSite: http.SameSiteStrictMode,
-		Secure:   true,
 	}
 	http.SetCookie(w, authCookie)
 
@@ -165,6 +161,7 @@ func (h *Handler) GetAllScreens(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) GetBuildings(w http.ResponseWriter, r *http.Request) {
 	resp, err := http.Get("https://hck-api.unicorn.icu/api/v1/buildings/get-list-crm/?token=" + h.cfg.UjinToken)
+	log.Println("token", h.cfg.UjinToken)
 	if err != nil {
 		handleError(w, err)
 	}
