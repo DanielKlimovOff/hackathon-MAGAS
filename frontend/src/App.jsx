@@ -16,8 +16,90 @@ import {
   Settings,
   Siren,
   UserRound,
+  LogOut,
 } from 'lucide-react'
 import './App.css'
+
+function AuthScreen({ mode, onModeChange, onSubmit }) {
+  const isRegister = mode === 'register'
+
+  return (
+    <main className="auth-page">
+      <div className="auth-shell">
+        <img className="auth-logo" src="/auth-logo.svg" alt="Ujin" />
+
+        <form className="auth-card" onSubmit={onSubmit}>
+          {isRegister ? (
+            <>
+              <label className="auth-field">
+                <span>Имя</span>
+                <input name="firstName" placeholder="Введите имя" />
+              </label>
+
+              <label className="auth-field">
+                <span>Фамилия</span>
+                <input placeholder="Введите фамилию" />
+              </label>
+
+              <label className="auth-field">
+                <span>Email</span>
+                <input type="email" placeholder="Введите почту" />
+              </label>
+
+              <label className="auth-field">
+                <span>Пароль</span>
+                <input type="password" placeholder="Введите пароль" />
+              </label>
+
+              <label className="auth-field">
+                <span>Подтвердите пароль</span>
+                <input type="password" placeholder="Введите пароль" />
+              </label>
+
+              <label className="auth-consent">
+                <input type="checkbox" />
+                <span>
+                  Нажимая на кнопку «Зарегистрироваться» вы соглашаетесь с Политикой обработки
+                  персональных данных
+                </span>
+              </label>
+
+              <button className="auth-submit" type="submit">
+                Зарегистрироваться
+              </button>
+            </>
+          ) : (
+            <>
+              <label className="auth-field">
+                <span>Логин</span>
+                <input name="login" placeholder="Введите логин" />
+              </label>
+
+              <label className="auth-field">
+                <span>Пароль</span>
+                <input type="password" placeholder="Введите пароль" />
+              </label>
+
+              <button className="auth-submit" type="submit">
+                Войти
+              </button>
+
+              <button className="auth-link" type="button" onClick={() => onModeChange('register')}>
+                Создать аккаунт
+              </button>
+            </>
+          )}
+        </form>
+
+        {isRegister && (
+          <button className="auth-back" type="button" onClick={() => onModeChange('login')}>
+            ← Вернуться
+          </button>
+        )}
+      </div>
+    </main>
+  )
+}
 
 function DiamondAlertIcon({ size = 22, strokeWidth = 2 }) {
   return (
@@ -232,6 +314,9 @@ function App() {
   const [selectedHouseId, setSelectedHouseId] = useState(houses[0].id)
   const [carouselIndex, setCarouselIndex] = useState(0)
   const [view, setView] = useState('home')
+  const [authMode, setAuthMode] = useState('login')
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [currentUserName, setCurrentUserName] = useState('Admin')
 
   const visibleHouses = useMemo(
     () => Array.from({ length: 4 }, (_, index) => houses[(carouselIndex + index) % houses.length]),
@@ -255,6 +340,27 @@ function App() {
       return (nextIndex + houses.length) % houses.length
     })
   }
+
+  if (!isAuthenticated) {
+  return (
+    <AuthScreen
+      mode={authMode}
+      onModeChange={setAuthMode}
+      onSubmit={(event) => {
+        event.preventDefault()
+
+        const formData = new FormData(event.currentTarget)
+        const nextName =
+          authMode === 'register'
+            ? formData.get('firstName')
+            : formData.get('login')
+
+        setCurrentUserName(nextName || 'Admin')
+        setIsAuthenticated(true)
+      }}
+    />
+  )
+}
 
   return (
     <div className="app-shell">
@@ -296,8 +402,19 @@ function App() {
               <span className="roleuser-avatar">
                 <UserRound size={16} />
               </span>
-              <span>Admin</span>
+              <span>{currentUserName}</span>
             </div>
+            <button
+              className="logout-button"
+              type="button"
+              aria-label="Выйти из аккаунта"
+              onClick={() => {
+                setIsAuthenticated(false)
+                setAuthMode('login')
+              }}
+            >
+              <LogOut size={22} strokeWidth={2.2} />
+            </button>
           </div>
         </header>
 
