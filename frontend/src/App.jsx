@@ -609,8 +609,12 @@ function App() {
       // no-op
     }
 
-    setCurrentUserName(nextName || 'Admin')
+    const userName = nextName || 'Admin'
+
+    localStorage.setItem('currentUserName', userName)
+    localStorage.setItem('isAuthenticated', 'true')
     setIsAuthenticated(true)
+    setCurrentUserName(userName)
   }
 
   async function handleLogout() {
@@ -623,6 +627,8 @@ function App() {
     setIsAuthenticated(false)
     setAuthMode('login')
     localStorage.removeItem('accessToken')
+    localStorage.removeItem('isAuthenticated')
+    localStorage.removeItem('currentUserName')
   }
 
   async function handleSendTemplate() {
@@ -692,9 +698,14 @@ function App() {
   return (
     <div className="app-shell">
       <aside className="nav-bar" aria-label="Основная навигация">
-        <a className="logo" href="/" aria-label="Главная">
+        <button
+          className="logo"
+          type="button"
+          aria-label="Главная"
+          onClick={() => setView('home')}
+        >
           <img className="logo-image" src="/logo.png" alt="Логотип УК" />
-        </a>
+        </button>
 
         <nav className="menu">
           {menuItems.map((item) => {
