@@ -50,7 +50,6 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 		Value:    token,
 		Path:     "/",
 		HttpOnly: true,
-		Secure:   true,
 		SameSite: http.SameSiteStrictMode,
 	}
 	http.SetCookie(w, authCookie)
@@ -76,7 +75,6 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 		Value:    token,
 		Path:     "/",
 		HttpOnly: true,
-		Secure:   true,
 		SameSite: http.SameSiteStrictMode,
 	}
 	http.SetCookie(w, authCookie)
@@ -92,7 +90,6 @@ func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
 		MaxAge:   -1,
 		Expires:  time.Unix(0, 0),
 		HttpOnly: true,
-		Secure:   true,
 		SameSite: http.SameSiteStrictMode,
 	}
 
@@ -140,7 +137,6 @@ func (h *Handler) NewScreen(w http.ResponseWriter, r *http.Request) {
 		Value:    token,
 		Path:     "/",
 		HttpOnly: true,
-		Secure:   true,
 		SameSite: http.SameSiteStrictMode,
 	}
 	http.SetCookie(w, authCookie)
