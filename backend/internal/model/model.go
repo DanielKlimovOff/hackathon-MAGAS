@@ -26,3 +26,7 @@ type UK struct {
 	Email        string    `json:"email"`
 	PasswordHash string    `json:"password_hash"`
 }
+
+type UKClaims struct {
+	ID uuid.UUID `json:"id"`
+}

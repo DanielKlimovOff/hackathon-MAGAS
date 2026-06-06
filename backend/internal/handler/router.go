@@ -34,6 +34,8 @@ func (h *Handler) Router(tokenAuth *jwtauth.JWTAuth) http.Handler {
 			r.Use(jwtauth.Verifier(tokenAuth))
 			r.Use(jwtauth.Authenticator(tokenAuth))
 
+			r.Get("/screens/code", h.GetConnectCode)
+
 			r.Post("/logout", h.Logout)
 		})
 	})

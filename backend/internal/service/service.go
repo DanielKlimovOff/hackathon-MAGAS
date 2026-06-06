@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"hackathon_MAGAS/internal/config"
 	"hackathon_MAGAS/internal/model"
+	"hackathon_MAGAS/internal/rediska"
 	"hackathon_MAGAS/internal/repository"
 
 	"github.com/go-chi/jwtauth/v5"
@@ -16,19 +17,22 @@ import (
 type Service interface {
 	Login(context.Context, model.LoginRequest) (string, error)
 	Register(context.Context, model.RegisterRequest) (string, error)
+	GetConnectCode(context.Context, model.UKClaims) (string, error)
 }
 
 type ServiceImpl struct {
 	cfg       *config.Config
 	repo      repository.Repository
 	tokenAuth *jwtauth.JWTAuth
+	rediska   rediska.Rediska
 }
 
-func New(cfg *config.Config, repo repository.Repository, tokenAuth *jwtauth.JWTAuth) ServiceImpl {
-	return ServiceImpl{
+func New(cfg *config.Config, repo repository.Repository, tokenAuth *jwtauth.JWTAuth, rediska rediska.Rediska) *ServiceImpl {
+	return &ServiceImpl{
 		cfg,
 		repo,
 		tokenAuth,
+		rediska,
 	}
 }
 
@@ -83,4 +87,18 @@ func (s ServiceImpl) Register(ctx context.Context, req model.RegisterRequest) (s
 	}
 
 	return token, nil
+}
+
+func (s ServiceImpl) GetConnectCode(ctx context.Context, ukClaims model.UKClaims) (string, error) {
+	code, err := s.rediska.Get(ctx, ukClaims.ID.String())
+	if err != nil {
+		return "", err
+	}
+	if code == "" {
+		code = uuid.New().String()[:6]
+		if err := s.rediska.Set(ctx, ukClaims.ID.String(), code, s.cfg.ConnectCodeTTL); err != nil {
+			return "", err
+		}
+	}
+	return code, nil
 }

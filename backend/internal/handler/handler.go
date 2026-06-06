@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -10,6 +11,9 @@ import (
 	"log"
 	"net/http"
 	"time"
+
+	"github.com/go-chi/jwtauth/v5"
+	"github.com/google/uuid"
 )
 
 type Handler struct {
@@ -95,6 +99,21 @@ func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
+func (h *Handler) GetConnectCode(w http.ResponseWriter, r *http.Request) {
+	ukClaims, err := getUserClaims(r.Context())
+	if err != nil {
+		handleError(w, model.ErrUnauthorized)
+	}
+
+	code, err := h.svc.GetConnectCode(r.Context(), ukClaims)
+	if err != nil {
+		handleError(w, err)
+		return
+	}
+
+	writeJSON(w, http.StatusOK, map[string]string{"code": code})
+}
+
 func writeJSON(w http.ResponseWriter, status int, data any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
@@ -116,4 +135,22 @@ func handleError(w http.ResponseWriter, err error) {
 	default:
 		http.Error(w, "internal error", http.StatusInternalServerError)
 	}
+}
+
+func getUserClaims(ctx context.Context) (model.UKClaims, error) {
+	_, claims, err := jwtauth.FromContext(ctx)
+	if err != nil {
+		return model.UKClaims{}, err
+	}
+
+	userID, err := uuid.Parse(claims["id"].(string))
+	if err != nil {
+		return model.UKClaims{}, err
+	}
+
+	ukClaims := model.UKClaims{
+		ID: userID,
+	}
+
+	return ukClaims, nil
 }
