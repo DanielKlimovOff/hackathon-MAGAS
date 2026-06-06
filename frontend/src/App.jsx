@@ -524,8 +524,12 @@ function App() {
   const [carouselIndex, setCarouselIndex] = useState(0)
   const [view, setView] = useState('home')
   const [authMode, setAuthMode] = useState('login')
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
-  const [currentUserName, setCurrentUserName] = useState('Admin')
+  const [isAuthenticated, setIsAuthenticated] = useState(
+    () => localStorage.getItem('isAuthenticated') === 'true' || Boolean(localStorage.getItem('accessToken')),
+  )
+  const [currentUserName, setCurrentUserName] = useState(
+    () => localStorage.getItem('currentUserName') || 'Admin',
+  )
   const [deviceSearch, setDeviceSearch] = useState('')
   const [managedDeviceId, setManagedDeviceId] = useState(null)
   const [screenCode, setScreenCode] = useState('')
