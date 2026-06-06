@@ -20,6 +20,23 @@ jobs:
         with:
           go-version: '1.26.2'
 
+      - name: Check Go formatting
+        working-directory: ./backend
+        run: |
+          test -z "$(gofmt -l .)"
+
+      - name: Run go vet
+        working-directory: ./backend
+        run: |
+          go vet ./...
+
+      - name: Run golangci-lint
+        uses: golangci/golangci-lint-action@v8
+        with:
+          version: latest
+          working-directory: ./backend
+          args: --timeout=5m
+
       - name: Check backend
         working-directory: ./backend
         run: |
