@@ -27,7 +27,7 @@ func (h *Handler) Router(tokenAuth *jwtauth.JWTAuth) http.Handler {
 		r.Group(func(r chi.Router) {
 			r.Get("/healthz", h.healthz)
 
-			r.Get("/uks", h.GetAllUKs)
+			// r.Get("/uks", h.GetAllUKs)
 
 			r.Post("/login", h.Login)
 			r.Post("/register", h.Register)
@@ -45,6 +45,12 @@ func (h *Handler) Router(tokenAuth *jwtauth.JWTAuth) http.Handler {
 
 			r.Post("/logout", h.Logout)
 		})
+
+		r.Group(func(r chi.Router) {
+			r.Use(AuthScreenMiddleware(tokenAuth))
+
+			r.Get("/parking", h.GetFreeParkingSlots)
+		})
 	})
 	return r
 }
@@ -54,6 +60,29 @@ func AuthMiddleware(tokenAuth *jwtauth.JWTAuth) func(http.Handler) http.Handler 
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 			cookie, err := r.Cookie("auth_token")
+			if err != nil {
+				http.Error(w, "unauthorized", http.StatusUnauthorized)
+				return
+			}
+
+			token, err := jwtauth.VerifyToken(tokenAuth, cookie.Value)
+			if err != nil {
+				http.Error(w, "unauthorized", http.StatusUnauthorized)
+				return
+			}
+
+			ctx := jwtauth.NewContext(r.Context(), token, nil)
+
+			next.ServeHTTP(w, r.WithContext(ctx))
+		})
+	}
+}
+
+func AuthScreenMiddleware(tokenAuth *jwtauth.JWTAuth) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+			cookie, err := r.Cookie("screen_token")
 			if err != nil {
 				http.Error(w, "unauthorized", http.StatusUnauthorized)
 				return

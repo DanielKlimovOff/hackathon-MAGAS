@@ -185,6 +185,43 @@ func (h *Handler) GetBuildings(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func (h *Handler) GetFreeParkingSlots(w http.ResponseWriter, r *http.Request) {
+	resp, err := http.Get("https://hck-api.unicorn.icu/api/v1/parking/free/?token=" + h.cfg.UjinToken)
+	log.Println("token", h.cfg.UjinToken)
+	if err != nil {
+		handleError(w, err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		handleError(w, fmt.Errorf("unexpected status code: %d", resp.StatusCode))
+	}
+
+	var req map[string]interface{}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		handleError(w, fmt.Errorf("%w: failed to decode request body", model.ErrBadRequest))
+		return
+	}
+
+	w.Header().Set("Content-Type", resp.Header.Get("Content-Type"))
+	w.WriteHeader(resp.StatusCode)
+
+	data, ok := req["data"]
+	if !ok {
+		handleError(w, fmt.Errorf("unexpected response format"))
+	}
+	items, ok := data.(map[string]interface{})["items"]
+	if !ok {
+		handleError(w, fmt.Errorf("unexpected response format"))
+	}
+
+	count_slots := len(items.([]interface{}))
+
+	writeJSON(w, http.StatusOK, map[string]int{
+		"free_slots": count_slots,
+	})
+}
+
 func writeJSON(w http.ResponseWriter, status int, data any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
