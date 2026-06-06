@@ -111,7 +111,7 @@ function AuthScreen({ mode, onModeChange, onSubmit }) {
 
 const menuItems = [
   { id: 'houses', label: 'Дома', icon: Monitor, view: 'home' },
-  { id: 'services', label: 'Сервисы', icon: Grid2X2Plus, view: 'home' },
+  { id: 'services', label: 'Сервисы', icon: Grid2X2Plus, view: 'templates' },
   { id: 'emergency', label: 'Чрезвычайные ситуации', icon: Siren, view: 'emergency' },
 ]
 
@@ -541,6 +541,9 @@ function App() {
   const [managedDeviceId, setManagedDeviceId] = useState(null)
   const [screenCode, setScreenCode] = useState('')
   const [screenCodeMessage, setScreenCodeMessage] = useState('')
+  const [templateWidgets, setTemplateWidgets] = useState([])
+  const [widgetTitle, setWidgetTitle] = useState('')
+  const [widgetSize, setWidgetSize] = useState(3)
   const [emergencyHouseId, setEmergencyHouseId] = useState(houses[1].id)
   const [emergencyScope, setEmergencyScope] = useState('all')
   const [emergencyGroupId, setEmergencyGroupId] = useState('hall')
@@ -784,6 +787,20 @@ const selectedEmergencyGroupDevices = screenDevices[emergencyHouse.id]?.[emergen
   )
 }
 
+  function handleAddWidget() {
+    setTemplateWidgets((currentWidgets) => [
+      ...currentWidgets,
+      {
+        id: Date.now(),
+        title: widgetTitle || 'Новый виджет',
+        size: Number(widgetSize),
+      },
+    ])
+
+    setWidgetTitle('')
+    setWidgetSize(3)
+  }
+
   function formatScreenCount(count) {
     if (count % 10 === 1 && count % 100 !== 11) {
       return `${count} экран`
@@ -929,6 +946,63 @@ const selectedEmergencyGroupDevices = screenDevices[emergencyHouse.id]?.[emergen
                 </button>
               </section>
             </>
+          ) : view === 'templates' ? (
+            <section className="templates-page-inner">
+              <section className="template-builder-card">
+                <div className="template-builder-heading">
+                  <div>
+                    <span className="section-kicker">Шаблоны</span>
+                    <h2>Конструктор шаблонов</h2>
+                    <p>Создавайте виджеты и раскладывайте их по сетке экрана.</p>
+                  </div>
+
+                  <button className="send-template-button" type="button">
+                    Сохранить шаблон
+                  </button>
+                </div>
+
+                <div className="template-builder-form">
+                  <label>
+                    <span>Название виджета</span>
+                    <input
+                      value={widgetTitle}
+                      onChange={(event) => setWidgetTitle(event.target.value)}
+                      placeholder="Например: Новости УК"
+                    />
+                  </label>
+
+                  <label>
+                    <span>Размер</span>
+                    <select
+                      value={widgetSize}
+                      onChange={(event) => setWidgetSize(event.target.value)}
+                    >
+                      <option value={3}>3 колонки</option>
+                      <option value={4}>4 колонки</option>
+                      <option value={6}>6 колонок</option>
+                    </select>
+                  </label>
+
+                  <button className="connect-screen-button" type="button" onClick={handleAddWidget}>
+                    <span>+</span>
+                    Добавить виджет
+                  </button>
+                </div>
+              </section>
+
+              <section className="template-canvas-card">
+                <h3>Полотно шаблона</h3>
+
+                <div className="template-canvas">
+                  {templateWidgets.map((widget) => (
+                    <article className={`template-widget size-${widget.size}`} key={widget.id}>
+                      <strong>{widget.title}</strong>
+                      <span>{widget.size} колонки</span>
+                    </article>
+                  ))}
+                </div>
+              </section>
+            </section>
           ) : view === 'emergency' ? (
             <section className="emergency-page-inner">
               <section className="emergency-card">

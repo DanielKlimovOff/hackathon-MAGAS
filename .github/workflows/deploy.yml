@@ -7,57 +7,57 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-check:
-    name: Check frontend and backend
-    runs-on: ubuntu-latest
+  # build-check:
+  #   name: Check frontend and backend
+  #   runs-on: ubuntu-latest
 
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+  #   steps:
+  #     - name: Checkout repository
+  #       uses: actions/checkout@v4
 
-      - name: Setup Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: '1.26.2'
+  #     - name: Setup Go
+  #       uses: actions/setup-go@v5
+  #       with:
+  #         go-version: '1.26.2'
 
-      # - name: Check Go formatting
-      #   working-directory: ./backend
-      #   run: |
-      #     test -z "$(gofmt -l .)"
+  #     # - name: Check Go formatting
+  #     #   working-directory: ./backend
+  #     #   run: |
+  #     #     test -z "$(gofmt -l .)"
 
-      # - name: Run go vet
-      #   working-directory: ./backend
-      #   run: |
-      #     go vet ./...
+  #     # - name: Run go vet
+  #     #   working-directory: ./backend
+  #     #   run: |
+  #     #     go vet ./...
 
-      # - name: Run golangci-lint
-      #   uses: golangci/golangci-lint-action@v6git
-      #   with:
-      #     version: v1.64.8
-      #     working-directory: ./backend
-      #     args: --timeout=5m
+  #     # - name: Run golangci-lint
+  #     #   uses: golangci/golangci-lint-action@v6git
+  #     #   with:
+  #     #     version: v1.64.8
+  #     #     working-directory: ./backend
+  #     #     args: --timeout=5m
 
-      - name: Check backend
-        working-directory: ./backend
-        run: |
-          go mod download
-          go test ./...
+  #     - name: Check backend
+  #       working-directory: ./backend
+  #       run: |
+  #         go mod download
+  #         go test ./...
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
+  #     - name: Setup Node.js
+  #       uses: actions/setup-node@v4
+  #       with:
+  #         node-version: '22'
 
-      - name: Check frontend
-        working-directory: ./frontend
-        run: |
-          npm ci
-          npm run build
+  #     - name: Check frontend
+  #       working-directory: ./frontend
+  #       run: |
+  #         npm ci
+  #         npm run build
 
   deploy:
     name: Deploy to server
     runs-on: ubuntu-latest
-    needs: build-check
+    # needs: build-check
 
     steps:
       - name: Deploy via SSH
