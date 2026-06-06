@@ -26,6 +26,9 @@ import {
   register,
   resetEmergency,
 } from './services/api'
+import { Responsive as ResponsiveGridLayout } from 'react-grid-layout'
+import 'react-grid-layout/css/styles.css'
+import 'react-resizable/css/styles.css'
 import './App.css'
 
 function AuthScreen({ mode, onModeChange, onSubmit }) {
@@ -544,6 +547,7 @@ function App() {
   const [templateWidgets, setTemplateWidgets] = useState([])
   const [widgetTitle, setWidgetTitle] = useState('')
   const [widgetSize, setWidgetSize] = useState(3)
+  const [selectedTemplateWidgetId, setSelectedTemplateWidgetId] = useState(null)
   const [emergencyHouseId, setEmergencyHouseId] = useState(houses[1].id)
   const [emergencyScope, setEmergencyScope] = useState('all')
   const [emergencyGroupId, setEmergencyGroupId] = useState('hall')
@@ -600,12 +604,15 @@ function App() {
   )
 
   const emergencyGroups = [
-  { id: 'hall', label: 'Холлы' },
-  { id: 'lift', label: 'Лифты' },
-  { id: 'parking', label: 'Парковки' },
-]
-const selectedEmergencyGroup = emergencyGroups.find((group) => group.id === emergencyGroupId)
-const selectedEmergencyGroupDevices = screenDevices[emergencyHouse.id]?.[emergencyGroupId] || []
+    { id: 'hall', label: 'Холлы' },
+    { id: 'lift', label: 'Лифты' },
+    { id: 'parking', label: 'Парковки' },
+  ]
+  const selectedEmergencyGroup = emergencyGroups.find((group) => group.id === emergencyGroupId)
+  const selectedEmergencyGroupDevices = screenDevices[emergencyHouse.id]?.[emergencyGroupId] || []
+  const selectedTemplateWidget = templateWidgets.find(
+    (widget) => widget.id === selectedTemplateWidgetId,
+  )
 
   function selectHouse(house) {
     setSelectedHouseId(house.id)
@@ -771,34 +778,77 @@ const selectedEmergencyGroupDevices = screenDevices[emergencyHouse.id]?.[emergen
   }
 
   async function handleResetEmergency(logId) {
-  try {
-    await resetEmergency({
-      building_id: Number(emergencyHouseId),
-      log_id: logId,
-    })
-  } catch {
-    // no-op
+    try {
+      await resetEmergency({
+        building_id: Number(emergencyHouseId),
+        log_id: logId,
+      })
+    } catch {
+      // no-op
+    }
+
+    setEmergencyLog((currentLog) =>
+      currentLog.map((item) =>
+        item.id === logId ? { ...item, status: 'deactivated' } : item,
+      ),
+    )
   }
 
-  setEmergencyLog((currentLog) =>
-    currentLog.map((item) =>
-      item.id === logId ? { ...item, status: 'deactivated' } : item,
-    ),
-  )
-}
-
   function handleAddWidget() {
+    const size = Number(widgetSize)
+    const id = `widget-${Date.now()}`
+
     setTemplateWidgets((currentWidgets) => [
       ...currentWidgets,
       {
-        id: Date.now(),
+        id,
         title: widgetTitle || 'Новый виджет',
-        size: Number(widgetSize),
+        content: 'Текст виджета',
+        x: 0,
+        y: Infinity,
+        w: size,
+        h: size === 6 ? 3 : 2,
       },
     ])
 
+    setSelectedTemplateWidgetId(id)
     setWidgetTitle('')
     setWidgetSize(3)
+  }
+
+  function handleTemplateLayoutChange(layout) {
+    setTemplateWidgets((currentWidgets) =>
+      currentWidgets.map((widget) => {
+        const layoutItem = layout.find((item) => item.i === widget.id)
+
+        if (!layoutItem) {
+          return widget
+        }
+
+        return {
+          ...widget,
+          x: layoutItem.x,
+          y: layoutItem.y,
+          w: layoutItem.w,
+          h: layoutItem.h,
+        }
+      }),
+    )
+  }
+
+  function updateTemplateWidget(field, value) {
+    setTemplateWidgets((currentWidgets) =>
+      currentWidgets.map((widget) =>
+        widget.id === selectedTemplateWidgetId ? { ...widget, [field]: value } : widget,
+      ),
+    )
+  }
+
+  function removeTemplateWidget() {
+    setTemplateWidgets((currentWidgets) =>
+      currentWidgets.filter((widget) => widget.id !== selectedTemplateWidgetId),
+    )
+    setSelectedTemplateWidgetId(null)
   }
 
   function formatScreenCount(count) {
@@ -888,9 +938,11 @@ const selectedEmergencyGroupDevices = screenDevices[emergencyHouse.id]?.[emergen
           className={
             view === 'home'
               ? 'content home-page'
-              : view === 'emergency'
-                ? 'content emergency-page'
-                : 'content address-page'
+              : view === 'templates'
+                ? 'content templates-page'
+                : view === 'emergency'
+                  ? 'content emergency-page'
+                  : 'content address-page'
           }
         >
           {view === 'home' ? (
@@ -953,7 +1005,7 @@ const selectedEmergencyGroupDevices = screenDevices[emergencyHouse.id]?.[emergen
                   <div>
                     <span className="section-kicker">Шаблоны</span>
                     <h2>Конструктор шаблонов</h2>
-                    <p>Создавайте виджеты и раскладывайте их по сетке экрана.</p>
+                    <p>Создавайте виджеты, двигайте их мышкой и настраивайте содержимое.</p>
                   </div>
 
                   <button className="send-template-button" type="button">
@@ -990,17 +1042,86 @@ const selectedEmergencyGroupDevices = screenDevices[emergencyHouse.id]?.[emergen
                 </div>
               </section>
 
-              <section className="template-canvas-card">
-                <h3>Полотно шаблона</h3>
+              <section className="template-editor-layout">
+                <div className="template-screen">
+                  <div className="template-screen-header">
+                    <span>Полотно шаблона</span>
+                    <strong>12 колонок</strong>
+                  </div>
 
-                <div className="template-canvas">
-                  {templateWidgets.map((widget) => (
-                    <article className={`template-widget size-${widget.size}`} key={widget.id}>
-                      <strong>{widget.title}</strong>
-                      <span>{widget.size} колонки</span>
-                    </article>
-                  ))}
+                  <ResponsiveGridLayout
+                    className="template-canvas"
+                    cols={{ lg: 12, md: 12, sm: 12, xs: 12, xxs: 12 }}
+                    layouts={{
+                      lg: templateWidgets.map((widget) => ({
+                        i: widget.id,
+                        x: widget.x,
+                        y: widget.y,
+                        w: widget.w,
+                        h: widget.h,
+                        minW: 3,
+                        maxW: 6,
+                        minH: 2,
+                      })),
+                    }}
+                    margin={[12, 12]}
+                    rowHeight={52}
+                    onLayoutChange={handleTemplateLayoutChange}
+                    compactType={null}
+                    preventCollision={false}
+                    isBounded
+                  >
+                    {templateWidgets.map((widget) => (
+                      <article
+                        className={
+                          selectedTemplateWidgetId === widget.id
+                            ? 'template-widget is-selected'
+                            : 'template-widget'
+                        }
+                        key={widget.id}
+                        onClick={() => setSelectedTemplateWidgetId(widget.id)}
+                      >
+                        <strong>{widget.title}</strong>
+                        <p>{widget.content}</p>
+                        <span>{widget.w} колонки</span>
+                      </article>
+                    ))}
+                  </ResponsiveGridLayout>
                 </div>
+
+                <aside className="template-inspector">
+                  <h3>Настройка виджета</h3>
+
+                  {selectedTemplateWidget ? (
+                    <div className="template-inspector-fields">
+                      <label>
+                        <span>Название</span>
+                        <input
+                          value={selectedTemplateWidget.title}
+                          onChange={(event) => updateTemplateWidget('title', event.target.value)}
+                        />
+                      </label>
+
+                      <label>
+                        <span>Текст внутри</span>
+                        <textarea
+                          value={selectedTemplateWidget.content}
+                          onChange={(event) => updateTemplateWidget('content', event.target.value)}
+                        />
+                      </label>
+
+                      <button
+                        className="template-remove-button"
+                        type="button"
+                        onClick={removeTemplateWidget}
+                      >
+                        Удалить виджет
+                      </button>
+                    </div>
+                  ) : (
+                    <p>Выберите виджет на экране, чтобы настроить его текст.</p>
+                  )}
+                </aside>
               </section>
             </section>
           ) : view === 'emergency' ? (
