@@ -1,9 +1,12 @@
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || ''
 
 async function request(path, options = {}) {
+  const token = localStorage.getItem('accessToken')
+
   const response = await fetch(`${API_BASE_URL}${path}`,{
     headers: {
       'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...options.headers,
     },
     ...options,
@@ -22,23 +25,34 @@ async function request(path, options = {}) {
 }
 
 export function login(payload) {
-  return request('/api/v1/auth/login', {
+  return request('/api/v1/login', {
     method: 'POST',
     body: JSON.stringify(payload),
   })
 }
 
 export function register(payload) {
-  return request('/api/v1/auth/register', {
+  return request('/api/v1/register', {
     method: 'POST',
     body: JSON.stringify(payload),
   })
 }
 
 export function logout() {
-  return request('/api/v1/auth/logout', {
+  return request('/api/v1/logout', {
     method: 'POST',
   })
+}
+
+export function createScreenCode(payload) {
+  return request('/api/v1/screens/code', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export function getNewScreen(code) {
+  return request(`/api/v1/screens/new/${code}`)
 }
 
 export function listScreens() {
