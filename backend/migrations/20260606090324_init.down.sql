@@ -1,0 +1,7 @@
+DROP TABLE IF EXISTS "uks";
+DROP TABLE IF EXISTS "screens";
+DROP TABLE IF EXISTS "groups";
+DROP TABLE IF EXISTS "screens_groups";
+DROP TABLE IF EXISTS "templates";
+DROP TABLE IF EXISTS "vigets";
+DROP TABLE IF EXISTS "templates_vigets";
