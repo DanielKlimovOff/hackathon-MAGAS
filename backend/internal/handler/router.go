@@ -27,6 +27,7 @@ func (h *Handler) Router(tokenAuth *jwtauth.JWTAuth) http.Handler {
 		r.Group(func(r chi.Router) {
 			r.Get("/healthz", h.healthz)
 			r.Post("/login", h.Login)
+			r.Post("/register", h.Register)
 		})
 
 		r.Group(func(r chi.Router) {

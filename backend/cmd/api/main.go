@@ -13,6 +13,9 @@ import (
 	_ "github.com/lib/pq"
 )
 
+// curl -i -X POST localhost:8080/api/v1/register -d '{"email": "daniel@magas.ru", "password": "123"}'
+// curl -i -X POST localhost:8080/api/v1/logout -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjM2MWQyOTE4LTRiODQtNDc3MC04ZmU1LTdiNjY1OTZhMWFjZiJ9.sDcMhh7U29sryAoQfkkmStTaHOdNUnYMBZFnYykMt28"
+
 func main() {
 	cfg, err := config.Load()
 	if err != nil {

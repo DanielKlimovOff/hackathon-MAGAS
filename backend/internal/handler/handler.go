@@ -52,6 +52,32 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
+func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
+	var req model.RegisterRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		handleError(w, fmt.Errorf("%w: failed to decode request body", model.ErrBadRequest))
+		return
+	}
+
+	token, err := h.svc.Register(r.Context(), req)
+	if err != nil {
+		handleError(w, err)
+		return
+	}
+
+	authCookie := &http.Cookie{
+		Name:     "auth_token",
+		Value:    token,
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   true,
+		SameSite: http.SameSiteStrictMode,
+	}
+	http.SetCookie(w, authCookie)
+
+	w.WriteHeader(http.StatusOK)
+}
+
 func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
 	cookie := &http.Cookie{
 		Name:     "auth_token",
