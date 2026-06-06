@@ -22,21 +22,21 @@ async function request(path, options = {}) {
 }
 
 export function login(payload) {
-  return request('/api/v1/auth/login', {
+  return request('/api/v1/login', {
     method: 'POST',
     body: JSON.stringify(payload),
   })
 }
 
 export function register(payload) {
-  return request('/api/v1/auth/register', {
+  return request('/api/v1/register', {
     method: 'POST',
     body: JSON.stringify(payload),
   })
 }
 
 export function logout() {
-  return request('/api/v1/auth/logout', {
+  return request('/api/v1/logout', {
     method: 'POST',
   })
 }
