@@ -41,7 +41,7 @@ func New(cfg *config.Config, repo repository.Repository, tokenAuth *jwtauth.JWTA
 }
 
 func (s ServiceImpl) Login(ctx context.Context, req model.LoginRequest) (string, error) {
-	uk, err := s.repo.GetUKByEmailAddress(ctx, req.Email)
+	uk, err := s.repo.GetUKByEmailAddress(ctx, req.Login)
 	if err != nil {
 		return "", err
 	}
