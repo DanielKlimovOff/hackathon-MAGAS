@@ -9,6 +9,7 @@ import {
   DoorOpen,
   Grid2X2Plus,
   Home,
+  LogOut,
   MapPin,
   Monitor,
   Newspaper,
@@ -16,7 +17,6 @@ import {
   Settings,
   Siren,
   UserRound,
-  LogOut,
 } from 'lucide-react'
 import { assignTemplate, login, logout, register } from './services/api'
 import './App.css'
@@ -315,8 +315,7 @@ function App() {
     event.preventDefault()
 
     const formData = new FormData(event.currentTarget)
-    const nextName =
-      authMode === 'register' ? formData.get('firstName') : formData.get('login')
+    const nextName = authMode === 'register' ? formData.get('firstName') : formData.get('login')
 
     const payload =
       authMode === 'register'
@@ -370,14 +369,14 @@ function App() {
   }
 
   if (!isAuthenticated) {
-  return (
-    <AuthScreen
-      mode={authMode}
-      onModeChange={setAuthMode}
-      onSubmit={handleAuthSubmit}
-    />
-  )
-}
+    return (
+      <AuthScreen
+        mode={authMode}
+        onModeChange={setAuthMode}
+        onSubmit={handleAuthSubmit}
+      />
+    )
+  }
 
   return (
     <div className="app-shell">
@@ -415,12 +414,14 @@ function App() {
             <button className="header-icon-button" type="button" aria-label="Уведомления">
               <Bell size={18} />
             </button>
+
             <div className="roleuser" aria-label="Профиль пользователя">
               <span className="roleuser-avatar">
                 <UserRound size={16} />
               </span>
               <span>{currentUserName}</span>
             </div>
+
             <button
               className="logout-button"
               type="button"
@@ -460,16 +461,17 @@ function App() {
                 <div className="houses-viewport">
                   <div className="houses-grid">
                     {visibleHouses.map((house) => (
-                    <button
-                      aria-label={`Открыть экраны адреса ${house.title}`}
-                      className="background"
-                      key={house.id}
-                      type="button"
+                      <button
+                        aria-label={`Открыть экраны адреса ${house.title}`}
+                        className="background"
+                        key={house.id}
+                        type="button"
                         onClick={() => selectHouse(house)}
                       >
                         <div className="house-icon">
                           <Home size={22} />
                         </div>
+
                         <div className="house-info">
                           <h3>{house.title}</h3>
                           <p>{house.address}</p>
@@ -506,6 +508,7 @@ function App() {
                     {selectedHouse.address}
                   </p>
                 </div>
+
                 <button className="send-template-button" type="button" onClick={handleSendTemplate}>
                   Отправить шаблон
                 </button>
@@ -524,6 +527,7 @@ function App() {
                             ? 'offline'
                             : 'черновик'}
                       </span>
+
                       <div className="display-title">
                         <DisplayIcon size={24} />
                         <div>
@@ -531,6 +535,7 @@ function App() {
                           <p>{display.audience}</p>
                         </div>
                       </div>
+
                       <div className="widget-list">
                         {display.widgets.map((widget) => (
                           <span key={widget}>{widget}</span>
