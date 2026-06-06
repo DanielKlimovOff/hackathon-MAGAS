@@ -15,7 +15,7 @@ func (h *Handler) Router(tokenAuth *jwtauth.JWTAuth) http.Handler {
 	r.Use(middleware.Recoverer)
 
 	r.Use(cors.Handler(cors.Options{
-		AllowedOrigins:   []string{"http://45.155.205.127/", "http://localhost:3000", "http://127.0.0.1:3000"},
+		AllowedOrigins:   []string{"http://45.155.205.127", "http://localhost:3000", "http://127.0.0.1:3000"},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
 		ExposedHeaders:   []string{"Link"},
@@ -34,8 +34,7 @@ func (h *Handler) Router(tokenAuth *jwtauth.JWTAuth) http.Handler {
 		})
 
 		r.Group(func(r chi.Router) {
-			r.Use(jwtauth.Verifier(tokenAuth))
-			r.Use(jwtauth.Authenticator(tokenAuth))
+			r.Use(AuthMiddleware(tokenAuth))
 
 			r.Post("/screens/code", h.GenerateConnectCode)
 			r.Get("/screens", h.GetAllScreens)
@@ -46,4 +45,27 @@ func (h *Handler) Router(tokenAuth *jwtauth.JWTAuth) http.Handler {
 		})
 	})
 	return r
+}
+
+func AuthMiddleware(tokenAuth *jwtauth.JWTAuth) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+			cookie, err := r.Cookie("auth_token")
+			if err != nil {
+				http.Error(w, "unauthorized", http.StatusUnauthorized)
+				return
+			}
+
+			token, err := jwtauth.VerifyToken(tokenAuth, cookie.Value)
+			if err != nil {
+				http.Error(w, "unauthorized", http.StatusUnauthorized)
+				return
+			}
+
+			ctx := jwtauth.NewContext(r.Context(), token, nil)
+
+			next.ServeHTTP(w, r.WithContext(ctx))
+		})
+	}
 }
