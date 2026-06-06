@@ -19,7 +19,6 @@
 .menu-button,
 .header-icon-button,
 .roleuser,
-.add-house-button,
 .house-icon {
   display: flex;
   align-items: center;
@@ -191,43 +190,6 @@
   color: #8c8c8c;
   font-size: 16px;
   line-height: 1.4;
-}
-
-.add-house-button {
-  width: auto;
-  min-width: 220px;
-  height: 48px;
-  flex-direction: row;
-  justify-content: center;
-  gap: 12px;
-  flex: 0 0 auto;
-  margin-top: 4px;
-  padding: 0 22px;
-  border: 0;
-  border-radius: 8px;
-  color: #0d2930;
-  background-color: #44d8f1;
-  cursor: pointer;
-  font-weight: 800;
-  line-height: 1;
-  white-space: nowrap;
-  transition:
-    background-color 0.2s,
-    transform 0.2s;
-}
-
-.add-house-button:hover {
-  background-color: #31c7e0;
-  transform: translateY(-1px);
-}
-
-.add-house-button svg {
-  flex: 0 0 auto;
-}
-
-.add-house-button span {
-  display: block;
-  line-height: 1;
 }
 
 .houses-carousel {
