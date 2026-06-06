@@ -1032,7 +1032,7 @@ function App() {
                         <th>Объект / дисплей</th>
                         <th>Текст сообщения</th>
                         <th>Статус</th>
-                        <th>Действие</th>
+                        <th></th>
                       </tr>
                     </thead>
 
@@ -1044,17 +1044,22 @@ function App() {
                           <td>{item.target}</td>
                           <td>{item.message}</td>
                           <td>
-                              {item.status === 'active' ? (
-                                <button
-                                  className="emergency-log-reset"
-                                  type="button"
-                                  onClick={() => handleResetEmergency(item.id)}
-                                >
-                                  Сброс
-                                </button>
-                              ) : (
-                                <span className="emergency-log-empty">—</span>
-                              )}
+                            <span className={`emergency-log-status ${item.status}`}>
+                              {item.status === 'active' ? 'Активно' : 'Деактивировано'}
+                            </span>
+                          </td>
+                          <td>
+                            {item.status === 'active' ? (
+                              <button
+                                className="emergency-log-reset"
+                                type="button"
+                                onClick={() => handleResetEmergency(item.id)}
+                              >
+                                Сброс
+                              </button>
+                            ) : (
+                              <span className="emergency-log-empty">—</span>
+                            )}
                           </td>
                         </tr>
                       ))}

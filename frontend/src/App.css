@@ -1304,10 +1304,10 @@
 }
 
 .emergency-log-reset {
-  min-height: 30px;
-  padding: 0 12px;
+  min-height: 36px;
+  padding: 0 18px;
   border: 0;
-  border-radius: 8px;
+  border-radius: 10px;
   color: #8d989b;
   background: #f0f2f5;
   cursor: pointer;
@@ -1321,4 +1321,5 @@
 
 .emergency-log-empty {
   color: #b4bbbd;
+  font-weight: 900;
 }
