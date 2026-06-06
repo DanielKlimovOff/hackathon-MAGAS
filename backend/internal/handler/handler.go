@@ -186,7 +186,7 @@ func (h *Handler) GetBuildings(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) GetFreeParkingSlots(w http.ResponseWriter, r *http.Request) {
-	resp, err := http.Get("https://hck-api.unicorn.icu/api/v1/parking/free/?token=" + h.cfg.UjinToken)
+	resp, err := http.Get("https://hck-api.unicorn.icu/api/v1/parking/free?token=" + h.cfg.UjinToken)
 	log.Println("token", h.cfg.UjinToken)
 	if err != nil {
 		handleError(w, err)
