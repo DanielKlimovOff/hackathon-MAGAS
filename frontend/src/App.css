@@ -28,6 +28,10 @@
 .logo {
   width: 40px;
   height: 40px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
   text-decoration: none;
 }
 
@@ -1073,4 +1077,233 @@
 .logout-button:hover {
   color: #0d2930;
   background: rgba(68, 216, 241, 0.12);
+}
+
+.emergency-page {
+  background: #f3f4f7;
+}
+
+.emergency-page-inner {
+  max-width: 1126px;
+  display: grid;
+  gap: 22px;
+  margin: 0 auto;
+}
+
+.emergency-card {
+  padding: 28px;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.emergency-heading h2,
+.emergency-card h2,
+.emergency-card h3 {
+  margin: 0;
+  color: #111;
+}
+
+.emergency-heading h2 {
+  font-size: 26px;
+  line-height: 1.2;
+}
+
+.emergency-heading p {
+  margin: 6px 0 26px;
+  color: #a0a7a9;
+  font-size: 13px;
+}
+
+.emergency-card h3 {
+  margin-bottom: 22px;
+  color: #24bfc6;
+  font-size: 22px;
+}
+
+.emergency-form-grid {
+  display: grid;
+  grid-template-columns: 360px minmax(0, 430px);
+  gap: 70px;
+  align-items: start;
+}
+
+.emergency-left-column {
+  display: grid;
+  gap: 20px;
+}
+
+.emergency-field {
+  display: grid;
+  gap: 10px;
+  color: #111;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.emergency-field select,
+.emergency-field textarea {
+  width: 100%;
+  border: 0;
+  border-radius: 8px;
+  background: #f0f2f5;
+  outline: none;
+}
+
+.emergency-field select {
+  height: 42px;
+  padding: 0 14px;
+  color: #111;
+}
+
+.emergency-field textarea {
+  min-height: 118px;
+  padding: 14px;
+  resize: vertical;
+  color: #111;
+}
+
+.emergency-field textarea::placeholder {
+  color: #b0b6b8;
+}
+
+.emergency-scope-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.emergency-scope-tabs button {
+  min-height: 36px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 8px;
+  color: #9aa4a6;
+  background: #f0f2f5;
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.emergency-scope-tabs button.is-active {
+  color: #0d2930;
+  background: rgba(68, 216, 241, 0.18);
+  box-shadow: inset 0 0 0 1px #44d8f1;
+}
+
+.emergency-display-picker {
+  display: grid;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.emergency-display-picker label {
+  min-height: 38px;
+  display: grid;
+  grid-template-columns: 16px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 0 12px;
+  border-radius: 8px;
+  background: #f0f2f5;
+  color: #111;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.emergency-display-picker input {
+  width: 14px;
+  height: 14px;
+}
+
+.emergency-display-picker strong {
+  color: #8f989a;
+  font-size: 12px;
+}
+
+.emergency-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-top: 12px;
+}
+
+.emergency-activate,
+.emergency-reset {
+  min-height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 900;
+}
+
+.emergency-activate {
+  color: #fff;
+  background: #e41b1b;
+}
+
+.emergency-reset {
+  color: #8d989b;
+  background: #f0f2f5;
+}
+
+.emergency-log-table-wrap {
+  margin-top: 24px;
+  overflow-x: auto;
+}
+
+.emergency-log-table {
+  width: 100%;
+  min-width: 900px;
+  border-collapse: collapse;
+}
+
+.emergency-log-table th,
+.emergency-log-table td {
+  padding: 18px 20px;
+  border-bottom: 1px solid #edf0f2;
+  text-align: left;
+  vertical-align: middle;
+}
+
+.emergency-log-table th {
+  color: #8f989a;
+  background: #f8f9fa;
+  font-size: 11px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.emergency-log-table td {
+  color: #222;
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.emergency-log-status {
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  padding: 0 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.emergency-log-status.completed {
+  color: #19864f;
+  background: #dff8eb;
+}
+
+.emergency-log-status.active {
+  color: #fff;
+  background: #e41b1b;
+}
+
+.emergency-log-status.deactivated {
+  color: #6f7678;
+  background: #edf0f1;
 }

@@ -14,9 +14,19 @@ import {
   Newspaper,
   Search,
   Siren,
+  TriangleAlert,
   UserRound,
 } from 'lucide-react'
-import { assignTemplate, createScreenCode, getNewScreen, login, logout, register } from './services/api'
+import {
+  activateEmergency,
+  assignTemplate,
+  createScreenCode,
+  getNewScreen,
+  login,
+  logout,
+  register,
+  resetEmergency,
+} from './services/api'
 import './App.css'
 
 function AuthScreen({ mode, onModeChange, onSubmit }) {
@@ -101,9 +111,9 @@ function AuthScreen({ mode, onModeChange, onSubmit }) {
 }
 
 const menuItems = [
-  { id: 'houses', label: 'Дома', icon: Monitor, active: true },
-  { id: 'services', label: 'Сервисы', icon: Grid2X2Plus },
-  { id: 'emergency', label: 'Чрезвычайные ситуации', icon: Siren },
+  { id: 'houses', label: 'Дома', icon: Monitor, view: 'home' },
+  { id: 'services', label: 'Сервисы', icon: Grid2X2Plus, view: 'home' },
+  { id: 'emergency', label: 'Чрезвычайные ситуации', icon: Siren, view: 'emergency' },
 ]
 
 const groupTitles = {
@@ -534,6 +544,36 @@ function App() {
   const [managedDeviceId, setManagedDeviceId] = useState(null)
   const [screenCode, setScreenCode] = useState('')
   const [screenCodeMessage, setScreenCodeMessage] = useState('')
+  const [emergencyHouseId, setEmergencyHouseId] = useState(houses[1].id)
+  const [emergencyScope, setEmergencyScope] = useState('all')
+  const [emergencyMessage, setEmergencyMessage] = useState('')
+  const [emergencyDisplayIds, setEmergencyDisplayIds] = useState([])
+  const [emergencyLog, setEmergencyLog] = useState([
+    {
+      id: 1,
+      date: '12.10.2023 14:32',
+      initiator: 'Иванов А.С.',
+      target: 'ЖК «Панорама» (Все экраны)',
+      message: 'Внимание! Плановая проверка системы оповещения. Просьба сохранять спокойствие.',
+      status: 'completed',
+    },
+    {
+      id: 2,
+      date: '12.10.2023 10:15',
+      initiator: 'Системный админ',
+      target: 'Все объекты',
+      message: 'ВНИМАНИЕ! Пожарная тревога в корпусе 2. Срочно покиньте здание!',
+      status: 'active',
+    },
+    {
+      id: 3,
+      date: '11.10.2023 18:45',
+      initiator: 'Петров Д.М.',
+      target: 'ЖК «Лазурный» (Лифт №3)',
+      message: 'Проводятся технические работы. Приносим извинения за неудобства.',
+      status: 'deactivated',
+    },
+  ])
 
   const visibleHouses = useMemo(
     () => Array.from({ length: 4 }, (_, index) => houses[(carouselIndex + index) % houses.length]),
@@ -551,6 +591,11 @@ function App() {
     : []
   const filteredDevices = selectedDevices.filter((device) =>
     device.id.toLowerCase().includes(deviceSearch.trim().toLowerCase()),
+  )
+  const emergencyHouse = houses.find((house) => house.id === Number(emergencyHouseId)) || houses[0]
+  const emergencyDevices = Object.values(screenDevices[emergencyHouse.id] || {}).flat()
+  const selectedEmergencyDevices = emergencyDevices.filter((device) =>
+    emergencyDisplayIds.includes(device.id),
   )
 
   function selectHouse(house) {
@@ -609,8 +654,12 @@ function App() {
       // no-op
     }
 
-    setCurrentUserName(nextName || 'Admin')
+    const userName = nextName || 'Admin'
+
+    localStorage.setItem('currentUserName', userName)
+    localStorage.setItem('isAuthenticated', 'true')
     setIsAuthenticated(true)
+    setCurrentUserName(userName)
   }
 
   async function handleLogout() {
@@ -623,6 +672,8 @@ function App() {
     setIsAuthenticated(false)
     setAuthMode('login')
     localStorage.removeItem('accessToken')
+    localStorage.removeItem('isAuthenticated')
+    localStorage.removeItem('currentUserName')
   }
 
   async function handleSendTemplate() {
@@ -667,6 +718,62 @@ function App() {
     }
   }
 
+  async function handleActivateEmergency() {
+    const selectedDisplayLabel = selectedEmergencyDevices.map((device) => device.id).join(', ')
+
+    const targetLabel =
+      emergencyScope === 'all'
+        ? `${emergencyHouse.title} (Все экраны)`
+        : emergencyScope === 'group'
+          ? `${emergencyHouse.title} (Группа экранов)`
+          : `${emergencyHouse.title} (${selectedDisplayLabel || 'Дисплеи не выбраны'})`
+
+    try {
+      await activateEmergency({
+        building_id: Number(emergencyHouseId),
+        scope: emergencyScope,
+        display_ids: emergencyScope === 'selected' ? emergencyDisplayIds : [],
+        message: emergencyMessage,
+      })
+    } catch {
+      // no-op
+    }
+
+    setEmergencyLog((currentLog) => [
+      {
+        id: Date.now(),
+        date: new Date().toLocaleString('ru-RU', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+        }),
+        initiator: currentUserName,
+        target: targetLabel,
+        message: emergencyMessage || 'Экстренное оповещение',
+        status: 'active',
+      },
+      ...currentLog,
+    ])
+  }
+
+  async function handleResetEmergency() {
+    try {
+      await resetEmergency({
+        building_id: Number(emergencyHouseId),
+      })
+    } catch {
+      // no-op
+    }
+
+    setEmergencyLog((currentLog) =>
+      currentLog.map((item) =>
+        item.status === 'active' ? { ...item, status: 'deactivated' } : item,
+      ),
+    )
+  }
+
   function formatScreenCount(count) {
     if (count % 10 === 1 && count % 100 !== 11) {
       return `${count} экран`
@@ -692,9 +799,14 @@ function App() {
   return (
     <div className="app-shell">
       <aside className="nav-bar" aria-label="Основная навигация">
-        <a className="logo" href="/" aria-label="Главная">
+        <button
+          className="logo"
+          type="button"
+          aria-label="Главная"
+          onClick={() => setView('home')}
+        >
           <img className="logo-image" src="/logo.png" alt="Логотип УК" />
-        </a>
+        </button>
 
         <nav className="menu">
           {menuItems.map((item) => {
@@ -703,10 +815,11 @@ function App() {
             return (
               <button
                 aria-label={item.label}
-                className={item.active ? 'menu-button is-active' : 'menu-button'}
+                className={view === item.view ? 'menu-button is-active' : 'menu-button'}
                 key={item.id}
                 title={item.label}
                 type="button"
+                onClick={() => setView(item.view)}
               >
                 <Icon size={22} strokeWidth={1.8} />
               </button>
@@ -744,7 +857,15 @@ function App() {
           </div>
         </header>
 
-        <main className={view === 'home' ? 'content home-page' : 'content address-page'}>
+        <main
+          className={
+            view === 'home'
+              ? 'content home-page'
+              : view === 'emergency'
+                ? 'content emergency-page'
+                : 'content address-page'
+          }
+        >
           {view === 'home' ? (
             <>
               <section className="content-heading">
@@ -798,6 +919,155 @@ function App() {
                 </button>
               </section>
             </>
+          ) : view === 'emergency' ? (
+            <section className="emergency-page-inner">
+              <section className="emergency-card">
+                <div className="emergency-heading">
+                  <h2>Управление режимом ЧС</h2>
+                  <p>Централизованное управление экстренными оповещениями по объектам</p>
+                </div>
+
+                <h3>Новое оповещение</h3>
+
+                <div className="emergency-form-grid">
+                  <div className="emergency-left-column">
+                    <label className="emergency-field">
+                      <span>Адрес ЖК</span>
+                      <select
+                        value={emergencyHouseId}
+                        onChange={(event) => {
+                          setEmergencyHouseId(event.target.value)
+                          setEmergencyDisplayIds([])
+                        }}
+                      >
+                        {houses.map((house) => (
+                          <option key={house.id} value={house.id}>
+                            {house.title}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+
+                    <div className="emergency-field">
+                      <span>Область вещания</span>
+                      <div className="emergency-scope-tabs">
+                        <button
+                          className={emergencyScope === 'all' ? 'is-active' : ''}
+                          type="button"
+                          onClick={() => setEmergencyScope('all')}
+                        >
+                          Все экраны
+                        </button>
+                        <button
+                          className={emergencyScope === 'group' ? 'is-active' : ''}
+                          type="button"
+                          onClick={() => setEmergencyScope('group')}
+                        >
+                          Группа
+                        </button>
+                        <button
+                          className={emergencyScope === 'selected' ? 'is-active' : ''}
+                          type="button"
+                          onClick={() => setEmergencyScope('selected')}
+                        >
+                          Выборочно
+                        </button>
+                      </div>
+
+                      {emergencyScope === 'selected' && (
+                        <div className="emergency-display-picker">
+                          {emergencyDevices.map((device) => (
+                            <label key={device.id}>
+                              <input
+                                type="checkbox"
+                                checked={emergencyDisplayIds.includes(device.id)}
+                                onChange={(event) => {
+                                  if (event.target.checked) {
+                                    setEmergencyDisplayIds((currentIds) => [...currentIds, device.id])
+                                  } else {
+                                    setEmergencyDisplayIds((currentIds) =>
+                                      currentIds.filter((id) => id !== device.id),
+                                    )
+                                  }
+                                }}
+                              />
+                              <span>{device.name}</span>
+                              <strong>{device.id}</strong>
+                            </label>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="emergency-actions">
+                      <button
+                        className="emergency-activate"
+                        type="button"
+                        onClick={handleActivateEmergency}
+                      >
+                        <TriangleAlert size={17} />
+                        Активировать режим ЧС
+                      </button>
+
+                      <button
+                        className="emergency-reset"
+                        type="button"
+                        onClick={handleResetEmergency}
+                      >
+                        Сбросить режим ЧС
+                      </button>
+                    </div>
+                  </div>
+
+                  <label className="emergency-field emergency-message-field">
+                    <span>Текст сообщения</span>
+                    <textarea
+                      value={emergencyMessage}
+                      onChange={(event) => setEmergencyMessage(event.target.value)}
+                      placeholder="Введите текст экстренного сообщения"
+                    />
+                  </label>
+                </div>
+              </section>
+
+              <section className="emergency-card">
+                <h2>Журнал действий</h2>
+
+                <div className="emergency-log-table-wrap">
+                  <table className="emergency-log-table">
+                    <thead>
+                      <tr>
+                        <th>Дата и время</th>
+                        <th>Инициатор</th>
+                        <th>Объект / дисплей</th>
+                        <th>Текст сообщения</th>
+                        <th>Статус</th>
+                      </tr>
+                    </thead>
+
+                    <tbody>
+                      {emergencyLog.map((item) => (
+                        <tr key={item.id}>
+                          <td>{item.date}</td>
+                          <td>{item.initiator}</td>
+                          <td>{item.target}</td>
+                          <td>{item.message}</td>
+                          <td>
+                            <span className={`emergency-log-status ${item.status}`}>
+                              {item.status === 'active'
+                                ? 'Активно'
+                                : item.status === 'completed'
+                                  ? 'Завершено'
+                                  : 'Деактивировано'}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </section>
+            </section>
           ) : (
             <section className="address-detail" aria-label="Экраны выбранного адреса">
               <button className="back-button" type="button" onClick={() => setView('home')}>
