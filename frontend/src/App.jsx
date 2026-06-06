@@ -543,6 +543,7 @@ function App() {
   const [screenCodeMessage, setScreenCodeMessage] = useState('')
   const [emergencyHouseId, setEmergencyHouseId] = useState(houses[1].id)
   const [emergencyScope, setEmergencyScope] = useState('all')
+  const [emergencyGroupId, setEmergencyGroupId] = useState('hall')
   const [emergencyMessage, setEmergencyMessage] = useState('')
   const [emergencyDisplayIds, setEmergencyDisplayIds] = useState([])
   const [emergencyLog, setEmergencyLog] = useState([
@@ -594,6 +595,14 @@ function App() {
   const selectedEmergencyDevices = emergencyDevices.filter((device) =>
     emergencyDisplayIds.includes(device.id),
   )
+
+  const emergencyGroups = [
+  { id: 'hall', label: 'Холлы' },
+  { id: 'lift', label: 'Лифты' },
+  { id: 'parking', label: 'Парковки' },
+]
+const selectedEmergencyGroup = emergencyGroups.find((group) => group.id === emergencyGroupId)
+const selectedEmergencyGroupDevices = screenDevices[emergencyHouse.id]?.[emergencyGroupId] || []
 
   function selectHouse(house) {
     setSelectedHouseId(house.id)
@@ -716,19 +725,22 @@ function App() {
   }
 
   async function handleActivateEmergency() {
+    const groupDisplayLabel = selectedEmergencyGroupDevices.map((device) => device.id).join(', ')
+
     const selectedDisplayLabel = selectedEmergencyDevices.map((device) => device.id).join(', ')
 
     const targetLabel =
       emergencyScope === 'all'
         ? `${emergencyHouse.title} (Все экраны)`
         : emergencyScope === 'group'
-          ? `${emergencyHouse.title} (Группа экранов)`
+          ? `${emergencyHouse.title} (${selectedEmergencyGroup?.label || 'Группа'}: ${groupDisplayLabel || 'нет дисплеев'})`
           : `${emergencyHouse.title} (${selectedDisplayLabel || 'Дисплеи не выбраны'})`
 
     try {
       await activateEmergency({
         building_id: Number(emergencyHouseId),
         scope: emergencyScope,
+        group_id: emergencyScope === 'group' ? emergencyGroupId : null,
         display_ids: emergencyScope === 'selected' ? emergencyDisplayIds : [],
         message: emergencyMessage,
       })
@@ -935,6 +947,7 @@ function App() {
                         value={emergencyHouseId}
                         onChange={(event) => {
                           setEmergencyHouseId(event.target.value)
+                          setEmergencyGroupId('hall')
                           setEmergencyDisplayIds([])
                         }}
                       >
@@ -971,7 +984,20 @@ function App() {
                           Выборочно
                         </button>
                       </div>
-
+                      {emergencyScope === 'group' && (
+                        <div className="emergency-group-picker">
+                          {emergencyGroups.map((group) => (
+                            <button
+                              className={emergencyGroupId === group.id ? 'is-active' : ''}
+                              key={group.id}
+                              type="button"
+                              onClick={() => setEmergencyGroupId(group.id)}
+                            >
+                              {group.label}
+                            </button>
+                          ))}
+                        </div>
+                        )}                        
                       {emergencyScope === 'selected' && (
                         <div className="emergency-display-picker">
                           {emergencyDevices.map((device) => (
@@ -1032,7 +1058,7 @@ function App() {
                         <th>Объект / дисплей</th>
                         <th>Текст сообщения</th>
                         <th>Статус</th>
-                        <th>Действие</th>
+                        <th></th>
                       </tr>
                     </thead>
 
@@ -1044,17 +1070,22 @@ function App() {
                           <td>{item.target}</td>
                           <td>{item.message}</td>
                           <td>
-                              {item.status === 'active' ? (
-                                <button
-                                  className="emergency-log-reset"
-                                  type="button"
-                                  onClick={() => handleResetEmergency(item.id)}
-                                >
-                                  Сброс
-                                </button>
-                              ) : (
-                                <span className="emergency-log-empty">—</span>
-                              )}
+                            <span className={`emergency-log-status ${item.status}`}>
+                              {item.status === 'active' ? 'Активно' : 'Деактивировано'}
+                            </span>
+                          </td>
+                          <td>
+                            {item.status === 'active' ? (
+                              <button
+                                className="emergency-log-reset"
+                                type="button"
+                                onClick={() => handleResetEmergency(item.id)}
+                              >
+                                Сброс
+                              </button>
+                            ) : (
+                              <span className="emergency-log-empty">—</span>
+                            )}
                           </td>
                         </tr>
                       ))}
