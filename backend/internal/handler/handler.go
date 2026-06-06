@@ -57,6 +57,15 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
+func (h *Handler) GetAllUKs(w http.ResponseWriter, r *http.Request) {
+	uks, err := h.svc.GetAllUKs(r.Context())
+	if err != nil {
+		handleError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, uks)
+}
+
 func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 	var req model.RegisterRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {

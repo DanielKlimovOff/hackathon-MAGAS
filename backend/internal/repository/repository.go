@@ -14,6 +14,7 @@ type Repository interface {
 	CreateUK(context.Context, model.UK) error
 	CreateScreen(context.Context, model.Screen) error
 	GetAllScreensByUKID(context.Context, uuid.UUID) ([]model.Screen, error)
+	GetAllUKs(context.Context) ([]model.UK, error)
 }
 
 type RepositoryImpl struct {
@@ -22,6 +23,26 @@ type RepositoryImpl struct {
 
 func New(db *sql.DB) *RepositoryImpl {
 	return &RepositoryImpl{db: db}
+}
+
+func (r *RepositoryImpl) GetAllUKs(ctx context.Context) ([]model.UK, error) {
+	rows, err := r.db.QueryContext(ctx, "SELECT id, email, password_hash FROM uks")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	uks := make([]model.UK, 0)
+	for rows.Next() {
+		var uk model.UK
+		err = rows.Scan(&uk.ID, &uk.Email, &uk.PasswordHash)
+		if err != nil {
+			return nil, err
+		}
+		uks = append(uks, uk)
+	}
+
+	return uks, nil
 }
 
 func (r *RepositoryImpl) GetUKByEmailAddress(ctx context.Context, email string) (model.UK, error) {

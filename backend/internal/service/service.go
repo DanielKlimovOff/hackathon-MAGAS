@@ -18,6 +18,7 @@ import (
 type Service interface {
 	Login(context.Context, model.LoginRequest) (string, error)
 	Register(context.Context, model.RegisterRequest) (string, error)
+	GetAllUKs(context.Context) ([]model.UK, error)
 	GenerateConnectCode(context.Context, model.UKClaims, model.GenerateCodeRequest) (string, error)
 	NewScreen(context.Context, string) (string, error)
 	GetAllScreens(context.Context, model.UKClaims) ([]model.Screen, error)
@@ -90,6 +91,10 @@ func (s ServiceImpl) Register(ctx context.Context, req model.RegisterRequest) (s
 	}
 
 	return token, nil
+}
+
+func (s ServiceImpl) GetAllUKs(ctx context.Context) ([]model.UK, error) {
+	return s.repo.GetAllUKs(ctx)
 }
 
 func (s ServiceImpl) GenerateConnectCode(ctx context.Context, ukClaims model.UKClaims, req model.GenerateCodeRequest) (string, error) {
