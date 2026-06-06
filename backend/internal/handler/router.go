@@ -26,15 +26,19 @@ func (h *Handler) Router(tokenAuth *jwtauth.JWTAuth) http.Handler {
 	r.Route("/api/v1", func(r chi.Router) {
 		r.Group(func(r chi.Router) {
 			r.Get("/healthz", h.healthz)
+
 			r.Post("/login", h.Login)
 			r.Post("/register", h.Register)
+
+			r.Get("/screens/new/{code}", h.NewScreen)
 		})
 
 		r.Group(func(r chi.Router) {
 			r.Use(jwtauth.Verifier(tokenAuth))
 			r.Use(jwtauth.Authenticator(tokenAuth))
 
-			r.Get("/screens/code", h.GetConnectCode)
+			r.Post("/screens/code", h.GenerateConnectCode)
+			r.Get("/screens", h.GetAllScreens)
 
 			r.Post("/logout", h.Logout)
 		})

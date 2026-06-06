@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/jwtauth/v5"
 	"github.com/google/uuid"
 )
@@ -99,19 +100,66 @@ func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func (h *Handler) GetConnectCode(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GenerateConnectCode(w http.ResponseWriter, r *http.Request) {
+	var req model.GenerateCodeRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		handleError(w, fmt.Errorf("%w: failed to decode request body", model.ErrBadRequest))
+		return
+	}
+
 	ukClaims, err := getUserClaims(r.Context())
 	if err != nil {
 		handleError(w, model.ErrUnauthorized)
 	}
 
-	code, err := h.svc.GetConnectCode(r.Context(), ukClaims)
+	code, err := h.svc.GenerateConnectCode(r.Context(), ukClaims, req)
 	if err != nil {
 		handleError(w, err)
 		return
 	}
 
 	writeJSON(w, http.StatusOK, map[string]string{"code": code})
+}
+
+func (h *Handler) NewScreen(w http.ResponseWriter, r *http.Request) {
+	code := chi.URLParam(r, "code")
+	if code == "" {
+		handleError(w, fmt.Errorf("%w: code is required", model.ErrBadRequest))
+		return
+	}
+
+	token, err := h.svc.NewScreen(r.Context(), code)
+	if err != nil {
+		handleError(w, err)
+		return
+	}
+
+	authCookie := &http.Cookie{
+		Name:     "screen_token",
+		Value:    token,
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   true,
+		SameSite: http.SameSiteStrictMode,
+	}
+	http.SetCookie(w, authCookie)
+
+	w.WriteHeader(http.StatusOK)
+}
+
+func (h *Handler) GetAllScreens(w http.ResponseWriter, r *http.Request) {
+	ukClaims, err := getUserClaims(r.Context())
+	if err != nil {
+		handleError(w, model.ErrUnauthorized)
+		return
+	}
+
+	screens, err := h.svc.GetAllScreens(r.Context(), ukClaims)
+	if err != nil {
+		handleError(w, err)
+	}
+
+	writeJSON(w, http.StatusOK, screens)
 }
 
 func writeJSON(w http.ResponseWriter, status int, data any) {

@@ -9,7 +9,8 @@ import (
 
 type Rediska interface {
 	Set(ctx context.Context, key string, value interface{}, ttl int) error
-	Get(ctx context.Context, key string) (string, error)
+	GetString(ctx context.Context, key string) (string, error)
+	GetBytes(ctx context.Context, key string) ([]byte, error)
 }
 
 type RediskaImpl struct {
@@ -27,11 +28,21 @@ func (r RediskaImpl) Set(ctx context.Context, key string, value interface{}, ttl
 	return nil
 }
 
-func (r RediskaImpl) Get(ctx context.Context, key string) (string, error) {
+func (r RediskaImpl) GetString(ctx context.Context, key string) (string, error) {
 	value, err := r.rdb.Get(ctx, key).Result()
 	if err != nil {
 		if err == redis.Nil {
 			return "", nil
+		}
+	}
+	return value, nil
+}
+
+func (r RediskaImpl) GetBytes(ctx context.Context, key string) (bytes []byte, err error) {
+	value, err := r.rdb.Get(ctx, key).Bytes()
+	if err != nil {
+		if err == redis.Nil {
+			return nil, nil
 		}
 	}
 	return value, nil
