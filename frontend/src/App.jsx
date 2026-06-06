@@ -11,6 +11,7 @@ import {
   LogOut,
   MapPin,
   Monitor,
+  Newspaper,
   Search,
   Siren,
   TriangleAlert,
@@ -119,6 +120,8 @@ const groupTitles = {
   hall: 'Холлы',
   lift: 'Лифты',
   parking: 'Парковки',
+  reception: 'Ресепшн',
+  info: 'Инфо',
 }
 
 const statusMeta = {
@@ -300,13 +303,13 @@ const screenDevices = {
         template: 'Контакты',
       },
     ],
-    parking: [
+    info: [
       {
-        id: '#PR-PK-001',
-        name: 'Parking - гостевая',
-        location: 'Гостевая парковка',
+        id: '#PR-INF-001',
+        name: 'Info - подъезды',
+        location: 'Все подъезды',
         status: 'online',
-        template: 'Правила парковки',
+        template: 'Постоянная информация',
       },
     ],
   },
@@ -340,10 +343,10 @@ const screenDevices = {
     ],
   },
   5: {
-    hall: [
+    reception: [
       {
-        id: '#VS-HL-001',
-        name: 'Hall - reception',
+        id: '#VS-RC-001',
+        name: 'Reception - desk',
         location: 'Главная стойка',
         status: 'online',
         template: 'Правила ЖК',
@@ -358,13 +361,13 @@ const screenDevices = {
         template: 'Режим ЧС',
       },
     ],
-    parking: [
+    info: [
       {
-        id: '#VS-PK-001',
-        name: 'Parking - tower',
-        location: 'Подземный паркинг',
+        id: '#VS-INF-001',
+        name: 'Info - общие экраны',
+        location: 'Общие экраны',
         status: 'offline',
-        template: 'Свободные места',
+        template: 'RSS-лента',
       },
     ],
   },
@@ -450,12 +453,12 @@ const houses = [
         widgets: ['Новости УК', 'График вывоза мусора', 'Контакты'],
       },
       {
-        id: 'parking',
-        label: 'Парковка',
-        icon: Car,
+        id: 'info',
+        label: 'Инфо',
+        icon: Newspaper,
         status: 'draft',
-        audience: 'Гостевая парковка',
-        widgets: ['Свободные места', 'Правила парковки'],
+        audience: 'Все подъезды',
+        widgets: ['Постоянная информация', 'Бонусы партнеров'],
       },
     ],
   },
@@ -498,8 +501,8 @@ const houses = [
     apartments: 156,
     displays: [
       {
-        id: 'hall',
-        label: 'Холл',
+        id: 'reception',
+        label: 'Ресепшн',
         icon: DoorOpen,
         status: 'online',
         audience: 'Главная стойка',
@@ -514,12 +517,12 @@ const houses = [
         widgets: ['Короткие объявления', 'Режим ЧС'],
       },
       {
-        id: 'parking',
-        label: 'Парковка',
-        icon: Car,
+        id: 'info',
+        label: 'Инфо',
+        icon: Newspaper,
         status: 'draft',
-        audience: 'Подземный паркинг',
-        widgets: ['Свободные места', 'Правила парковки'],
+        audience: 'Общие экраны',
+        widgets: ['Постоянная информация', 'Бонусы партнеров', 'RSS-лента'],
       },
     ],
   },
