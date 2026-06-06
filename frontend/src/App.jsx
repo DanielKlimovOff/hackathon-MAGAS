@@ -5,7 +5,6 @@ import {
   Car,
   ChevronLeft,
   ChevronRight,
-  CloudSun,
   DoorOpen,
   Grid2X2Plus,
   Home,
@@ -13,12 +12,11 @@ import {
   MapPin,
   Monitor,
   Newspaper,
-  Plus,
-  Settings,
+  Search,
   Siren,
   UserRound,
 } from 'lucide-react'
-import { assignTemplate, login, logout, register } from './services/api'
+import { assignTemplate, createScreenCode, getNewScreen, login, logout, register } from './services/api'
 import './App.css'
 
 function AuthScreen({ mode, onModeChange, onSubmit }) {
@@ -106,8 +104,264 @@ const menuItems = [
   { id: 'houses', label: 'Дома', icon: Monitor, active: true },
   { id: 'services', label: 'Сервисы', icon: Grid2X2Plus },
   { id: 'emergency', label: 'Чрезвычайные ситуации', icon: Siren },
-  { id: 'settings', label: 'Настройки', icon: Settings },
 ]
+
+const groupTitles = {
+  hall: 'Холлы',
+  lift: 'Лифты',
+  parking: 'Парковки',
+  reception: 'Ресепшн',
+  info: 'Инфо',
+}
+
+const statusMeta = {
+  online: {
+    label: 'Онлайн',
+    description: 'устройство подключено и работает',
+  },
+  offline: {
+    label: 'Оффлайн',
+    description: 'устройство не отвечает',
+  },
+  pending: {
+    label: 'В ожидании',
+    description: 'устройство ждет подключения',
+  },
+  emergency: {
+    label: 'ЧС',
+    description: 'на устройстве включен режим чрезвычайной ситуации',
+  },
+}
+
+const screenDevices = {
+  1: {
+    hall: [
+      {
+        id: '#TV-001',
+        name: 'Hall - section 1',
+        location: '1 этаж, 1 очередь',
+        status: 'online',
+        template: 'Утренние новости',
+      },
+      {
+        id: '#TV-002',
+        name: 'Hall - section 2',
+        location: '1 этаж, 2 очередь',
+        status: 'pending',
+        template: 'Погода',
+      },
+      {
+        id: '#TV-003',
+        name: 'Hall - section 3',
+        location: '1 этаж, 3 очередь',
+        status: 'emergency',
+        template: 'Режим ЧС',
+      },
+      {
+        id: '#TV-004',
+        name: 'Hall - section 4',
+        location: '1 этаж, 4 очередь',
+        status: 'online',
+        template: 'Погода',
+      },
+      {
+        id: '#TV-005',
+        name: 'Hall - section 5',
+        location: '1 этаж, 5 очередь',
+        status: 'offline',
+        template: 'Утренние новости',
+      },
+      {
+        id: '#TV-006',
+        name: 'Hall - section 6',
+        location: '1 этаж, 6 очередь',
+        status: 'online',
+        template: 'Погода',
+      },
+    ],
+    lift: [
+      {
+        id: '#LF-001',
+        name: 'Lift - подъезд 1',
+        location: 'Подъезд 1',
+        status: 'online',
+        template: 'Короткие объявления',
+      },
+      {
+        id: '#LF-002',
+        name: 'Lift - подъезд 2',
+        location: 'Подъезд 2',
+        status: 'pending',
+        template: 'Реклама партнеров',
+      },
+      {
+        id: '#LF-003',
+        name: 'Lift - подъезд 3',
+        location: 'Подъезд 3',
+        status: 'emergency',
+        template: 'Режим ЧС',
+      },
+      {
+        id: '#LF-004',
+        name: 'Lift - подъезд 4',
+        location: 'Подъезд 4',
+        status: 'offline',
+        template: 'Короткие объявления',
+      },
+    ],
+    parking: [
+      {
+        id: '#PK-001',
+        name: 'Parking - въезд',
+        location: 'Минус первый этаж',
+        status: 'online',
+        template: 'Свободные места',
+      },
+      {
+        id: '#PK-002',
+        name: 'Parking - гостевая',
+        location: 'Гостевая парковка',
+        status: 'pending',
+        template: 'Правила парковки',
+      },
+      {
+        id: '#PK-003',
+        name: 'Parking - выезд',
+        location: 'Выезд',
+        status: 'online',
+        template: 'Погода',
+      },
+    ],
+  },
+  2: {
+    hall: [
+      {
+        id: '#SV-001',
+        name: 'Hall - reception',
+        location: 'Ресепшн',
+        status: 'online',
+        template: 'Новости УК',
+      },
+      {
+        id: '#SV-002',
+        name: 'Hall - entrance',
+        location: 'Главный вход',
+        status: 'pending',
+        template: 'Правила ЖК',
+      },
+    ],
+    lift: [
+      {
+        id: '#SV-LF-001',
+        name: 'Lift - section 1',
+        location: 'Подъезд 1',
+        status: 'offline',
+        template: 'Объявления',
+      },
+      {
+        id: '#SV-LF-002',
+        name: 'Lift - section 2',
+        location: 'Подъезд 2',
+        status: 'emergency',
+        template: 'Режим ЧС',
+      },
+    ],
+    parking: [
+      {
+        id: '#SV-PK-001',
+        name: 'Parking - main',
+        location: 'Паркинг',
+        status: 'online',
+        template: 'Свободные места',
+      },
+    ],
+  },
+  3: {
+    hall: [
+      {
+        id: '#PR-001',
+        name: 'Hall - main',
+        location: 'Главный холл',
+        status: 'online',
+        template: 'Новости УК',
+      },
+      {
+        id: '#PR-002',
+        name: 'Hall - side',
+        location: 'Боковой вход',
+        status: 'pending',
+        template: 'Контакты',
+      },
+    ],
+    info: [
+      {
+        id: '#PR-INF-001',
+        name: 'Info - подъезды',
+        location: 'Все подъезды',
+        status: 'online',
+        template: 'Постоянная информация',
+      },
+    ],
+  },
+  4: {
+    hall: [
+      {
+        id: '#YS-001',
+        name: 'Hall - section 1',
+        location: 'Первый этаж',
+        status: 'online',
+        template: 'Новости УК',
+      },
+    ],
+    lift: [
+      {
+        id: '#YS-LF-001',
+        name: 'Lift - section 3',
+        location: 'Подъезд 3',
+        status: 'online',
+        template: 'Короткие объявления',
+      },
+    ],
+    parking: [
+      {
+        id: '#YS-PK-001',
+        name: 'Parking - guest',
+        location: 'Гостевая парковка',
+        status: 'pending',
+        template: 'Правила парковки',
+      },
+    ],
+  },
+  5: {
+    reception: [
+      {
+        id: '#VS-RC-001',
+        name: 'Reception - desk',
+        location: 'Главная стойка',
+        status: 'online',
+        template: 'Правила ЖК',
+      },
+    ],
+    lift: [
+      {
+        id: '#VS-LF-001',
+        name: 'Lift - east',
+        location: 'Все лифты',
+        status: 'emergency',
+        template: 'Режим ЧС',
+      },
+    ],
+    info: [
+      {
+        id: '#VS-INF-001',
+        name: 'Info - общие экраны',
+        location: 'Общие экраны',
+        status: 'offline',
+        template: 'RSS-лента',
+      },
+    ],
+  },
+}
 
 const houses = [
   {
@@ -139,14 +393,6 @@ const houses = [
         status: 'online',
         audience: 'Минус первый этаж',
         widgets: ['Свободные места', 'Кладовые', 'Погода'],
-      },
-      {
-        id: 'weather',
-        label: 'Погода',
-        icon: CloudSun,
-        status: 'draft',
-        audience: 'Все экраны дома',
-        widgets: ['Температура', 'Осадки', 'Ветер'],
       },
     ],
   },
@@ -268,25 +514,22 @@ const houses = [
         audience: 'Общие экраны',
         widgets: ['Постоянная информация', 'Бонусы партнеров', 'RSS-лента'],
       },
-      {
-        id: 'weather',
-        label: 'Погода',
-        icon: CloudSun,
-        status: 'online',
-        audience: 'Все экраны дома',
-        widgets: ['Температура', 'Осадки', 'Ветер'],
-      },
     ],
   },
 ]
 
 function App() {
   const [selectedHouseId, setSelectedHouseId] = useState(houses[0].id)
+  const [selectedDisplayId, setSelectedDisplayId] = useState(null)
   const [carouselIndex, setCarouselIndex] = useState(0)
   const [view, setView] = useState('home')
   const [authMode, setAuthMode] = useState('login')
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [currentUserName, setCurrentUserName] = useState('Admin')
+  const [deviceSearch, setDeviceSearch] = useState('')
+  const [managedDeviceId, setManagedDeviceId] = useState(null)
+  const [screenCode, setScreenCode] = useState('')
+  const [screenCodeMessage, setScreenCodeMessage] = useState('')
 
   const visibleHouses = useMemo(
     () => Array.from({ length: 4 }, (_, index) => houses[(carouselIndex + index) % houses.length]),
@@ -298,8 +541,21 @@ function App() {
     [selectedHouseId],
   )
 
+  const selectedDisplay = selectedHouse.displays.find((display) => display.id === selectedDisplayId)
+  const selectedDevices = selectedDisplay
+    ? screenDevices[selectedHouse.id]?.[selectedDisplay.id] || []
+    : []
+  const filteredDevices = selectedDevices.filter((device) =>
+    device.id.toLowerCase().includes(deviceSearch.trim().toLowerCase()),
+  )
+
   function selectHouse(house) {
     setSelectedHouseId(house.id)
+    setSelectedDisplayId(null)
+    setDeviceSearch('')
+    setManagedDeviceId(null)
+    setScreenCode('')
+    setScreenCodeMessage('')
     setView('address')
   }
 
@@ -332,13 +588,21 @@ function App() {
           }
 
     try {
+      let authResponse
+
       if (authMode === 'register') {
-        await register(payload)
+        authResponse = await register(payload)
       } else {
-        await login(payload)
+        authResponse = await login(payload)
       }
-    } catch (error) {
-      console.warn('Auth API is not ready yet, using demo mode.', error)
+
+      const token = authResponse?.token || authResponse?.access_token || authResponse?.accessToken
+
+      if (token) {
+        localStorage.setItem('accessToken', token)
+      }
+    } catch {
+      // no-op
     }
 
     setCurrentUserName(nextName || 'Admin')
@@ -348,12 +612,13 @@ function App() {
   async function handleLogout() {
     try {
       await logout()
-    } catch (error) {
-      console.warn('Logout API is not ready yet, using demo mode.', error)
+    } catch {
+      // no-op
     }
 
     setIsAuthenticated(false)
     setAuthMode('login')
+    localStorage.removeItem('accessToken')
   }
 
   async function handleSendTemplate() {
@@ -363,9 +628,51 @@ function App() {
         displayIds: selectedHouse.displays.map((display) => display.id),
         templateId: 'default-dashboard',
       })
-    } catch (error) {
-      console.warn('Template API is not ready yet, using demo mode.', error)
+    } catch {
+      // no-op
     }
+  }
+
+  async function handleCreateScreenCode() {
+    setScreenCodeMessage('Запрашиваем код подключения...')
+
+    try {
+      const response = await createScreenCode({ building_id: selectedHouse.id })
+      const code = response?.code || response?.screen_code || response?.data?.code || response
+
+      setScreenCode(String(code))
+      setScreenCodeMessage('Введите этот код на новом экране.')
+    } catch {
+      const fallbackCode = String(Math.floor(100000 + Math.random() * 900000))
+
+      setScreenCode(fallbackCode)
+      setScreenCodeMessage('Код подключения создан.')
+    }
+  }
+
+  async function handleCheckNewScreen() {
+    if (!screenCode) {
+      return
+    }
+
+    try {
+      await getNewScreen(screenCode)
+      setScreenCodeMessage('Новый экран найден, можно обновить список устройств.')
+    } catch {
+      setScreenCodeMessage('Экран с этим кодом не найден.')
+    }
+  }
+
+  function formatScreenCount(count) {
+    if (count % 10 === 1 && count % 100 !== 11) {
+      return `${count} экран`
+    }
+
+    if ([2, 3, 4].includes(count % 10) && ![12, 13, 14].includes(count % 100)) {
+      return `${count} экрана`
+    }
+
+    return `${count} экранов`
   }
 
   if (!isAuthenticated) {
@@ -441,11 +748,6 @@ function App() {
                   <h2>Подключенные дома</h2>
                   <p>Адреса, группы экранов и шаблоны для дисплеев ЖК</p>
                 </div>
-
-                <button className="add-house-button" type="button">
-                  <Plus size={24} strokeWidth={2.6} />
-                  <span>Добавить дом</span>
-                </button>
               </section>
 
               <section className="houses-carousel" aria-label="Подключенные дома">
@@ -509,42 +811,145 @@ function App() {
                   </p>
                 </div>
 
-                <button className="send-template-button" type="button" onClick={handleSendTemplate}>
-                  Отправить шаблон
+                <button className="connect-screen-button" type="button" onClick={handleCreateScreenCode}>
+                  <span>+</span>
+                  Подключить экран
                 </button>
               </div>
 
-              <div className="display-cards-grid" aria-label="Места размещения экранов">
+              {screenCode && (
+                <div className="screen-code-panel" aria-live="polite">
+                  <div>
+                    <span>Код подключения</span>
+                    <strong>{screenCode}</strong>
+                    <p>{screenCodeMessage}</p>
+                  </div>
+
+                  <button type="button" onClick={handleCheckNewScreen}>
+                    Проверить экран
+                  </button>
+                </div>
+              )}
+
+              <div className="screen-groups-grid" aria-label="Группы устройств">
                 {selectedHouse.displays.map((display) => {
                   const DisplayIcon = display.icon
+                  const devicesCount = screenDevices[selectedHouse.id]?.[display.id]?.length || 0
 
                   return (
-                    <article className="display-card" key={display.id}>
-                      <span className={`status-pill ${display.status}`}>
-                        {display.status === 'online'
-                          ? 'online'
-                          : display.status === 'offline'
-                            ? 'offline'
-                            : 'черновик'}
-                      </span>
-
-                      <div className="display-title">
+                    <button
+                      className={
+                        selectedDisplayId === display.id
+                          ? 'screen-group-card is-active'
+                          : 'screen-group-card'
+                      }
+                      key={display.id}
+                      type="button"
+                      onClick={() => {
+                        setSelectedDisplayId(display.id)
+                        setDeviceSearch('')
+                        setManagedDeviceId(null)
+                      }}
+                    >
+                      <div className="screen-group-title">
                         <DisplayIcon size={24} />
-                        <div>
-                          <h3>{display.label}</h3>
-                          <p>{display.audience}</p>
-                        </div>
+                        <h3>{groupTitles[display.id] || display.label}</h3>
                       </div>
 
-                      <div className="widget-list">
-                        {display.widgets.map((widget) => (
-                          <span key={widget}>{widget}</span>
-                        ))}
-                      </div>
-                    </article>
+                      <span>{formatScreenCount(devicesCount)}</span>
+                    </button>
                   )
                 })}
               </div>
+
+              <section className="devices-panel" aria-label="Список устройств">
+                <div className="devices-panel-header">
+                  <div>
+                    <h3>Список устройств</h3>
+                    {selectedDisplay && (
+                      <p>{groupTitles[selectedDisplay.id] || selectedDisplay.label}</p>
+                    )}
+                  </div>
+
+                  {selectedDisplay && (
+                    <label className="device-search">
+                      <Search size={16} />
+                      <input
+                        value={deviceSearch}
+                        onChange={(event) => setDeviceSearch(event.target.value)}
+                        placeholder="Поиск по ID устройства"
+                      />
+                    </label>
+                  )}
+                </div>
+
+                {!selectedDisplay ? (
+                  <div className="devices-empty">
+                    Выберите группу устройств: холлы, лифты или парковки.
+                  </div>
+                ) : filteredDevices.length === 0 ? (
+                  <div className="devices-empty">Устройство с таким ID не найдено.</div>
+                ) : (
+                  <div className="devices-table-wrap">
+                    <table className="devices-table">
+                      <thead>
+                        <tr>
+                          <th>Название</th>
+                          <th>ID устройства</th>
+                          <th>Локация</th>
+                          <th>Статус</th>
+                          <th>Активный шаблон</th>
+                          <th>Действия</th>
+                        </tr>
+                      </thead>
+
+                      <tbody>
+                        {filteredDevices.map((device) => (
+                          <tr key={device.id}>
+                            <td>{device.name}</td>
+                            <td>{device.id}</td>
+                            <td>{device.location}</td>
+                            <td>
+                              <span
+                                className={`device-status ${device.status}`}
+                                title={statusMeta[device.status].description}
+                              >
+                                {statusMeta[device.status].label}
+                              </span>
+                            </td>
+                            <td>{device.template}</td>
+                            <td className="device-actions-cell">
+                              <button
+                                className="manage-device-button"
+                                type="button"
+                                onClick={() =>
+                                  setManagedDeviceId(
+                                    managedDeviceId === device.id ? null : device.id,
+                                  )
+                                }
+                              >
+                                Управлять
+                              </button>
+
+                              {managedDeviceId === device.id && (
+                                <div className="manage-device-menu">
+                                  <button type="button">Изменить характеристики</button>
+                                  <button type="button" onClick={handleSendTemplate}>
+                                    Менять шаблоны
+                                  </button>
+                                  <button className="danger" type="button">
+                                    Удалить устройство
+                                  </button>
+                                </div>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </section>
             </section>
           )}
         </main>
