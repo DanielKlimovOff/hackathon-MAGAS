@@ -552,7 +552,7 @@ function App() {
       initiator: 'Иванов А.С.',
       target: 'ЖК «Панорама» (Все экраны)',
       message: 'Внимание! Плановая проверка системы оповещения. Просьба сохранять спокойствие.',
-      status: 'completed',
+      status: 'deactivated',
     },
     {
       id: 2,
@@ -755,21 +755,22 @@ function App() {
     ])
   }
 
-  async function handleResetEmergency() {
-    try {
-      await resetEmergency({
-        building_id: Number(emergencyHouseId),
-      })
-    } catch {
-      // no-op
-    }
-
-    setEmergencyLog((currentLog) =>
-      currentLog.map((item) =>
-        item.status === 'active' ? { ...item, status: 'deactivated' } : item,
-      ),
-    )
+  async function handleResetEmergency(logId) {
+  try {
+    await resetEmergency({
+      building_id: Number(emergencyHouseId),
+      log_id: logId,
+    })
+  } catch {
+    // no-op
   }
+
+  setEmergencyLog((currentLog) =>
+    currentLog.map((item) =>
+      item.id === logId ? { ...item, status: 'deactivated' } : item,
+    ),
+  )
+}
 
   function formatScreenCount(count) {
     if (count % 10 === 1 && count % 100 !== 11) {
@@ -1005,14 +1006,6 @@ function App() {
                         <TriangleAlert size={17} />
                         Активировать режим ЧС
                       </button>
-
-                      <button
-                        className="emergency-reset"
-                        type="button"
-                        onClick={handleResetEmergency}
-                      >
-                        Сбросить режим ЧС
-                      </button>
                     </div>
                   </div>
 
@@ -1039,6 +1032,7 @@ function App() {
                         <th>Объект / дисплей</th>
                         <th>Текст сообщения</th>
                         <th>Статус</th>
+                        <th>Действие</th>
                       </tr>
                     </thead>
 
@@ -1050,13 +1044,17 @@ function App() {
                           <td>{item.target}</td>
                           <td>{item.message}</td>
                           <td>
-                            <span className={`emergency-log-status ${item.status}`}>
-                              {item.status === 'active'
-                                ? 'Активно'
-                                : item.status === 'completed'
-                                  ? 'Завершено'
-                                  : 'Деактивировано'}
-                            </span>
+                              {item.status === 'active' ? (
+                                <button
+                                  className="emergency-log-reset"
+                                  type="button"
+                                  onClick={() => handleResetEmergency(item.id)}
+                                >
+                                  Сброс
+                                </button>
+                              ) : (
+                                <span className="emergency-log-empty">—</span>
+                              )}
                           </td>
                         </tr>
                       ))}

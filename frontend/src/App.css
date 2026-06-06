@@ -1293,11 +1293,6 @@
   font-weight: 900;
 }
 
-.emergency-log-status.completed {
-  color: #19864f;
-  background: #dff8eb;
-}
-
 .emergency-log-status.active {
   color: #fff;
   background: #e41b1b;
@@ -1306,4 +1301,24 @@
 .emergency-log-status.deactivated {
   color: #6f7678;
   background: #edf0f1;
+}
+
+.emergency-log-reset {
+  min-height: 30px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 8px;
+  color: #8d989b;
+  background: #f0f2f5;
+  cursor: pointer;
+  font-weight: 900;
+}
+
+.emergency-log-reset:hover {
+  color: #0d2930;
+  background: #e4e8ea;
+}
+
+.emergency-log-empty {
+  color: #b4bbbd;
 }
