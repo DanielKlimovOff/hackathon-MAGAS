@@ -197,8 +197,15 @@ func (h *Handler) GetFreeParkingSlots(w http.ResponseWriter, r *http.Request) {
 		handleError(w, fmt.Errorf("unexpected status code: %d", resp.StatusCode))
 	}
 
-	var req map[string]interface{}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	type ParkingResponse struct {
+		Data struct {
+			Items []interface{} `json:"items"`
+		} `json:"data"`
+	}
+
+	var respData ParkingResponse
+
+	if err := json.NewDecoder(r.Body).Decode(&respData); err != nil {
 		handleError(w, fmt.Errorf("%w: failed to decode request body", model.ErrBadRequest))
 		return
 	}
@@ -206,16 +213,7 @@ func (h *Handler) GetFreeParkingSlots(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", resp.Header.Get("Content-Type"))
 	w.WriteHeader(resp.StatusCode)
 
-	data, ok := req["data"]
-	if !ok {
-		handleError(w, fmt.Errorf("unexpected response format"))
-	}
-	items, ok := data.(map[string]interface{})["items"]
-	if !ok {
-		handleError(w, fmt.Errorf("unexpected response format"))
-	}
-
-	count_slots := len(items.([]interface{}))
+	count_slots := len(respData.Data.Items)
 
 	writeJSON(w, http.StatusOK, map[string]int{
 		"free_slots": count_slots,
