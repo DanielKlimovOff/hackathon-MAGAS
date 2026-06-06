@@ -1,9 +1,12 @@
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || ''
 
 async function request(path, options = {}) {
+  const token = localStorage.getItem('accessToken')
+
   const response = await fetch(`${API_BASE_URL}${path}`,{
     headers: {
       'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...options.headers,
     },
     ...options,
@@ -39,6 +42,17 @@ export function logout() {
   return request('/api/v1/logout', {
     method: 'POST',
   })
+}
+
+export function createScreenCode(payload) {
+  return request('/api/v1/screens/code', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export function getNewScreen(code) {
+  return request(`/api/v1/screens/new/${code}`)
 }
 
 export function listScreens() {
