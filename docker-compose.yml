@@ -21,7 +21,7 @@ services:
       - ./frontend:/app
     env_file:
       - .env
-    command: npm run dev -- --host 0.0.0.0
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
     ports:
       - "${FRONTEND_PORT}:5173"
 
