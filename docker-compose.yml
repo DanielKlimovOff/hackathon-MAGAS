@@ -1,0 +1,22 @@
+version: "3.9"
+
+services:
+  backend:
+    image: golang:1.24
+    container_name: ujin_backend
+    working_dir: /app
+    volumes:
+      - ./backend:/app
+    command: tail -f /dev/null
+    ports:
+      - "8080:8080"
+
+  frontend:
+    image: node:22
+    container_name: ujin_frontend
+    working_dir: /app
+    volumes:
+      - ./frontend:/app
+    command: tail -f /dev/null
+    ports:
+      - "3000:3000"
