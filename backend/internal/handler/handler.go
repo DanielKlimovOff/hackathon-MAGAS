@@ -8,6 +8,7 @@ import (
 	"hackathon_MAGAS/internal/config"
 	"hackathon_MAGAS/internal/model"
 	"hackathon_MAGAS/internal/service"
+	"io"
 	"log"
 	"net/http"
 	"time"
@@ -160,6 +161,22 @@ func (h *Handler) GetAllScreens(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, http.StatusOK, screens)
+}
+
+func (h *Handler) GetBuildings(w http.ResponseWriter, r *http.Request) {
+	resp, err := http.Get("https://hck-api.unicorn.icu/api/v1/buildings/get-list-crm/?token=" + h.cfg.UjinToken)
+	if err != nil {
+		handleError(w, err)
+	}
+	defer resp.Body.Close()
+	w.Header().Set("Content-Type", resp.Header.Get("Content-Type"))
+	w.WriteHeader(resp.StatusCode)
+
+	_, err = io.Copy(w, resp.Body)
+	if err != nil {
+		handleError(w, err)
+		return
+	}
 }
 
 func writeJSON(w http.ResponseWriter, status int, data any) {
