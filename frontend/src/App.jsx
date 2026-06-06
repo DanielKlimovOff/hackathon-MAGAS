@@ -13,7 +13,6 @@ import {
   Monitor,
   Newspaper,
   Search,
-  Settings,
   Siren,
   UserRound,
 } from 'lucide-react'
@@ -105,7 +104,6 @@ const menuItems = [
   { id: 'houses', label: 'Дома', icon: Monitor, active: true },
   { id: 'services', label: 'Сервисы', icon: Grid2X2Plus },
   { id: 'emergency', label: 'Чрезвычайные ситуации', icon: Siren },
-  { id: 'settings', label: 'Настройки', icon: Settings },
 ]
 
 const groupTitles = {
