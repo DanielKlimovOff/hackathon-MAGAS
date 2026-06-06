@@ -38,8 +38,8 @@ services:
     image: redis:8-alpine
     container_name: ujin_redis
     restart: unless-stopped
-    ports:
-      - "${REDIS_PORT}:6379"
+    expose:
+      - "6379"
     volumes:
       - redis_data:/data
     command: redis-server --appendonly yes
@@ -59,8 +59,8 @@ services:
     env_file:
       - .env
     command: go run ./cmd/api/main.go
-    ports:
-      - "${PORT}:8080"
+    expose:
+      - "8080"
     depends_on:
       postgres:
         condition: service_healthy
@@ -74,8 +74,8 @@ services:
     env_file:
       - .env
     command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
-    ports:
-      - "${FRONTEND_PORT}:5173"
+    expose:
+      - "5173"
 
   migrate:
     image: migrate/migrate
@@ -94,3 +94,4 @@ services:
 
 volumes:
   postgres_data:
+  redis_data:
