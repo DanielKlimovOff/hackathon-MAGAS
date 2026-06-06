@@ -19,6 +19,8 @@ type Config struct {
 	RedisDB        int
 	RedisProtocol  int
 	ConnectCodeTTL int
+
+	UjinToken string
 }
 
 func Load() (*Config, error) {
@@ -46,6 +48,8 @@ func Load() (*Config, error) {
 		panic(err)
 	}
 
+	ujinToken := getEnv("UJIN_TOKEN")
+
 	return &Config{
 		Port:               port,
 		JWTSecret:          jwtSecret,
@@ -56,6 +60,7 @@ func Load() (*Config, error) {
 		RedisDB:            redisDB,
 		RedisProtocol:      protocol,
 		ConnectCodeTTL:     connectCodeTTL,
+		UjinToken:          ujinToken,
 	}, nil
 }
 

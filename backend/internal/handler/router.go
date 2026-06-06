@@ -40,6 +40,8 @@ func (h *Handler) Router(tokenAuth *jwtauth.JWTAuth) http.Handler {
 			r.Post("/screens/code", h.GenerateConnectCode)
 			r.Get("/screens", h.GetAllScreens)
 
+			r.Get("/buildings", h.GetBuildings)
+
 			r.Post("/logout", h.Logout)
 		})
 	})
