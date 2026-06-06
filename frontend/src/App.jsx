@@ -14,15 +14,46 @@ import {
   Newspaper,
   Plus,
   Settings,
-  ShieldCheck,
+  Siren,
   UserRound,
 } from 'lucide-react'
 import './App.css'
 
+function DiamondAlertIcon({ size = 22, strokeWidth = 2 }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden="true"
+    >
+      <path
+        d="M12 2.5 21.5 12 12 21.5 2.5 12 12 2.5Z"
+        stroke="currentColor"
+        strokeWidth={strokeWidth}
+        strokeLinejoin="round"
+      />
+      <path
+        d="M12 7.5v6"
+        stroke="currentColor"
+        strokeWidth={strokeWidth}
+        strokeLinecap="round"
+      />
+      <path
+        d="M12 17h.01"
+        stroke="currentColor"
+        strokeWidth={strokeWidth + 1.5}
+        strokeLinecap="round"
+      />
+    </svg>
+  )
+}
+
 const menuItems = [
   { id: 'houses', label: 'Дома', icon: Monitor, active: true },
   { id: 'services', label: 'Сервисы', icon: Grid2X2Plus },
-  { id: 'security', label: 'Безопасность', icon: ShieldCheck },
+  { id: 'emergency', label: 'Чрезвычайные ситуации', icon: Siren },
   { id: 'settings', label: 'Настройки', icon: Settings },
 ]
 
