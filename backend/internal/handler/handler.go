@@ -246,12 +246,35 @@ func (h *Handler) NewTemplate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = h.svc.NewTemplate(r.Context(), ukClaims, req)
+	templateID, err := h.svc.NewTemplate(r.Context(), ukClaims, req)
 	if err != nil {
 		handleError(w, err)
+		return
 	}
 
-	w.WriteHeader(http.StatusOK)
+	writeJSON(w, http.StatusOK, map[string]interface{}{"template_id": templateID, "url": fmt.Sprintf("/templates/%s", templateID)})
+}
+
+func (h *Handler) GetTemplate(w http.ResponseWriter, r *http.Request) {
+	templateIDStr := chi.URLParam(r, "id")
+	if templateIDStr == "" {
+		handleError(w, fmt.Errorf("%w: template ID is required", model.ErrBadRequest))
+		return
+	}
+
+	templateID, err := uuid.Parse(templateIDStr)
+	if err != nil {
+		handleError(w, fmt.Errorf("%w: invalid template ID format", model.ErrBadRequest))
+		return
+	}
+
+	template, err := h.svc.GetTemplate(r.Context(), templateID)
+	if err != nil {
+		handleError(w, err)
+		return
+	}
+
+	writeJSON(w, http.StatusOK, template)
 }
 
 func writeJSON(w http.ResponseWriter, status int, data any) {

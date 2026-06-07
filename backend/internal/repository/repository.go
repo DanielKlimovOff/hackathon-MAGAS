@@ -19,6 +19,7 @@ type Repository interface {
 	CreateTemplate(context.Context, model.Template) error
 	CreateWidget(context.Context, model.Widget) error
 	SetTemplateToAllScreens(context.Context, uuid.UUID, uuid.UUID) error
+	GetTemplateByID(context.Context, uuid.UUID) (model.Template, error)
 }
 
 type RepositoryImpl struct {
@@ -131,4 +132,31 @@ func (r *RepositoryImpl) SetTemplateToAllScreens(ctx context.Context, templateID
 	}
 
 	return nil
+}
+
+func (r *RepositoryImpl) GetTemplateByID(ctx context.Context, templateID uuid.UUID) (model.Template, error) {
+	var template model.Template
+	err := r.db.QueryRowContext(ctx, "SELECT id, uk_id FROM templates WHERE id = $1", templateID).Scan(&template.ID, &template.UKID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return model.Template{}, fmt.Errorf("%w: template not found", model.ErrNotFound)
+		}
+		return model.Template{}, err
+	}
+
+	rows, err := r.db.QueryContext(ctx, "SELECT id, template_id, name, url, x, y, width, height FROM widgets WHERE template_id = $1", templateID)
+	if err != nil {
+		return model.Template{}, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var widget model.Widget
+		if err := rows.Scan(&widget.ID, &widget.TemplateID, &widget.Name, &widget.URL, &widget.X, &widget.Y, &widget.Width, &widget.Height); err != nil {
+			return model.Template{}, err
+		}
+		template.Widgets = append(template.Widgets, widget)
+	}
+
+	return template, nil
 }

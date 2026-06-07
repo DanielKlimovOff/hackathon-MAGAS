@@ -22,7 +22,8 @@ type Service interface {
 	GenerateConnectCode(context.Context, model.UKClaims, model.GenerateCodeRequest) (string, error)
 	NewScreen(context.Context, string) (string, error)
 	GetAllScreens(context.Context, model.UKClaims) ([]model.Screen, error)
-	NewTemplate(context.Context, model.UKClaims, model.NewTemplateRequest) error
+	NewTemplate(context.Context, model.UKClaims, model.NewTemplateRequest) (uuid.UUID, error)
+	GetTemplate(context.Context, uuid.UUID) (model.Template, error)
 }
 
 type ServiceImpl struct {
@@ -160,7 +161,7 @@ func (s ServiceImpl) NewScreen(ctx context.Context, code string) (string, error)
 	return token, nil
 }
 
-func (s ServiceImpl) NewTemplate(ctx context.Context, ukClaims model.UKClaims, req model.NewTemplateRequest) error {
+func (s ServiceImpl) NewTemplate(ctx context.Context, ukClaims model.UKClaims, req model.NewTemplateRequest) (uuid.UUID, error) {
 	template := model.Template{
 		ID:   uuid.New(),
 		UKID: ukClaims.ID,
@@ -168,7 +169,7 @@ func (s ServiceImpl) NewTemplate(ctx context.Context, ukClaims model.UKClaims, r
 
 	err := s.repo.CreateTemplate(ctx, template)
 	if err != nil {
-		return err
+		return uuid.Nil, err
 	}
 
 	for _, widget := range req.Widgets {
@@ -184,15 +185,19 @@ func (s ServiceImpl) NewTemplate(ctx context.Context, ukClaims model.UKClaims, r
 		}
 		err = s.repo.CreateWidget(ctx, widget)
 		if err != nil {
-			return err
+			return uuid.Nil, err
 		}
 	}
 
 	err = s.repo.SetTemplateToAllScreens(ctx, template.ID, ukClaims.ID)
 	if err != nil {
-		return err
+		return uuid.Nil, err
 	}
-	return nil
+	return template.ID, nil
+}
+
+func (s ServiceImpl) GetTemplate(ctx context.Context, templateID uuid.UUID) (model.Template, error) {
+	return s.repo.GetTemplateByID(ctx, templateID)
 }
 
 func (s ServiceImpl) GetAllScreens(ctx context.Context, ukClaims model.UKClaims) ([]model.Screen, error) {
