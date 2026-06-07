@@ -26,6 +26,9 @@ import {
   register,
   resetEmergency,
 } from './services/api'
+import { Responsive as ResponsiveGridLayout, useContainerWidth } from 'react-grid-layout'
+import 'react-grid-layout/css/styles.css'
+import 'react-resizable/css/styles.css'
 import './App.css'
 
 function AuthScreen({ mode, onModeChange, onSubmit }) {
@@ -544,6 +547,9 @@ function App() {
   const [templateWidgets, setTemplateWidgets] = useState([])
   const [widgetTitle, setWidgetTitle] = useState('')
   const [widgetSize, setWidgetSize] = useState(3)
+  const [widgetHeight, setWidgetHeight] = useState(4)
+  const [widgetUrl, setWidgetUrl] = useState('')
+  const [selectedTemplateWidgetId, setSelectedTemplateWidgetId] = useState(null)
   const [emergencyHouseId, setEmergencyHouseId] = useState(houses[1].id)
   const [emergencyScope, setEmergencyScope] = useState('all')
   const [emergencyGroupId, setEmergencyGroupId] = useState('hall')
@@ -600,12 +606,20 @@ function App() {
   )
 
   const emergencyGroups = [
-  { id: 'hall', label: 'Холлы' },
-  { id: 'lift', label: 'Лифты' },
-  { id: 'parking', label: 'Парковки' },
-]
-const selectedEmergencyGroup = emergencyGroups.find((group) => group.id === emergencyGroupId)
-const selectedEmergencyGroupDevices = screenDevices[emergencyHouse.id]?.[emergencyGroupId] || []
+    { id: 'hall', label: 'Холлы' },
+    { id: 'lift', label: 'Лифты' },
+    { id: 'parking', label: 'Парковки' },
+  ]
+  const selectedEmergencyGroup = emergencyGroups.find((group) => group.id === emergencyGroupId)
+  const selectedEmergencyGroupDevices = screenDevices[emergencyHouse.id]?.[emergencyGroupId] || []
+  const selectedTemplateWidget = templateWidgets.find(
+    (widget) => widget.id === selectedTemplateWidgetId,
+  )
+  const {
+    width: templateCanvasWidth,
+    containerRef: templateCanvasRef,
+    mounted: isTemplateCanvasMounted,
+  } = useContainerWidth()
 
   function selectHouse(house) {
     setSelectedHouseId(house.id)
@@ -771,34 +785,95 @@ const selectedEmergencyGroupDevices = screenDevices[emergencyHouse.id]?.[emergen
   }
 
   async function handleResetEmergency(logId) {
-  try {
-    await resetEmergency({
-      building_id: Number(emergencyHouseId),
-      log_id: logId,
-    })
-  } catch {
-    // no-op
+    try {
+      await resetEmergency({
+        building_id: Number(emergencyHouseId),
+        log_id: logId,
+      })
+    } catch {
+      // no-op
+    }
+
+    setEmergencyLog((currentLog) =>
+      currentLog.map((item) =>
+        item.id === logId ? { ...item, status: 'deactivated' } : item,
+      ),
+    )
   }
 
-  setEmergencyLog((currentLog) =>
-    currentLog.map((item) =>
-      item.id === logId ? { ...item, status: 'deactivated' } : item,
-    ),
-  )
-}
-
   function handleAddWidget() {
+    const size = Number(widgetSize)
+    const height = Number(widgetHeight)
+    const id = `widget-${Date.now()}`
+
     setTemplateWidgets((currentWidgets) => [
       ...currentWidgets,
       {
-        id: Date.now(),
+        id,
         title: widgetTitle || 'Новый виджет',
-        size: Number(widgetSize),
+        url: widgetUrl,
+        x: 0,
+        y: Infinity,
+        w: size,
+        h: height,
       },
     ])
 
+    setSelectedTemplateWidgetId(id)
     setWidgetTitle('')
     setWidgetSize(3)
+    setWidgetHeight(4)
+    setWidgetUrl('')
+  }
+
+  function handleTemplateLayoutChange(layout) {
+    setTemplateWidgets((currentWidgets) =>
+      currentWidgets.map((widget) => {
+        const layoutItem = layout.find((item) => item.i === widget.id)
+
+        if (!layoutItem) {
+          return widget
+        }
+
+        return {
+          ...widget,
+          x: layoutItem.x,
+          y: layoutItem.y,
+          w: layoutItem.w,
+          h: layoutItem.h,
+        }
+      }),
+    )
+  }
+
+  function updateTemplateWidget(field, value) {
+    setTemplateWidgets((currentWidgets) =>
+      currentWidgets.map((widget) =>
+        widget.id === selectedTemplateWidgetId ? { ...widget, [field]: value } : widget,
+      ),
+    )
+  }
+
+  function removeTemplateWidget() {
+    setTemplateWidgets((currentWidgets) =>
+      currentWidgets.filter((widget) => widget.id !== selectedTemplateWidgetId),
+    )
+    setSelectedTemplateWidgetId(null)
+  }
+
+  function updateTemplateWidgetNumber(field, value) {
+    const limits = {
+      w: { min: 3, max: 12 },
+      h: { min: 2, max: 12 },
+    }
+    const nextValue = Number(value)
+    const limit = limits[field]
+
+    if (!Number.isFinite(nextValue)) {
+      return
+    }
+
+    updateTemplateWidget(field, Math.min(limit.max, Math.max(limit.min, nextValue)))
   }
 
   function formatScreenCount(count) {
@@ -888,9 +963,11 @@ const selectedEmergencyGroupDevices = screenDevices[emergencyHouse.id]?.[emergen
           className={
             view === 'home'
               ? 'content home-page'
-              : view === 'emergency'
-                ? 'content emergency-page'
-                : 'content address-page'
+              : view === 'templates'
+                ? 'content templates-page'
+                : view === 'emergency'
+                  ? 'content emergency-page'
+                  : 'content address-page'
           }
         >
           {view === 'home' ? (
@@ -953,7 +1030,7 @@ const selectedEmergencyGroupDevices = screenDevices[emergencyHouse.id]?.[emergen
                   <div>
                     <span className="section-kicker">Шаблоны</span>
                     <h2>Конструктор шаблонов</h2>
-                    <p>Создавайте виджеты и раскладывайте их по сетке экрана.</p>
+                    <p>Создавайте виджеты, двигайте их мышкой и настраивайте содержимое.</p>
                   </div>
 
                   <button className="send-template-button" type="button">
@@ -983,6 +1060,27 @@ const selectedEmergencyGroupDevices = screenDevices[emergencyHouse.id]?.[emergen
                     </select>
                   </label>
 
+                  <label>
+                    <span>Высота</span>
+                    <select
+                      value={widgetHeight}
+                      onChange={(event) => setWidgetHeight(event.target.value)}
+                    >
+                      <option value={3}>3 строки</option>
+                      <option value={4}>4 строки</option>
+                      <option value={6}>6 строк</option>
+                    </select>
+                  </label>
+
+                  <label>
+                    <span>Сайт виджета</span>
+                    <input
+                      value={widgetUrl}
+                      onChange={(event) => setWidgetUrl(event.target.value)}
+                      placeholder="https://example.com"
+                    />
+                  </label>
+
                   <button className="connect-screen-button" type="button" onClick={handleAddWidget}>
                     <span>+</span>
                     Добавить виджет
@@ -990,17 +1088,145 @@ const selectedEmergencyGroupDevices = screenDevices[emergencyHouse.id]?.[emergen
                 </div>
               </section>
 
-              <section className="template-canvas-card">
-                <h3>Полотно шаблона</h3>
+              <section className="template-editor-layout">
+                <div className="template-screen">
+                  <div className="template-screen-header">
+                    <span>Полотно шаблона</span>
+                    <strong>12 колонок</strong>
+                  </div>
 
-                <div className="template-canvas">
-                  {templateWidgets.map((widget) => (
-                    <article className={`template-widget size-${widget.size}`} key={widget.id}>
-                      <strong>{widget.title}</strong>
-                      <span>{widget.size} колонки</span>
-                    </article>
-                  ))}
+                  <div className="template-canvas-shell" ref={templateCanvasRef}>
+                    {isTemplateCanvasMounted && (
+                      <ResponsiveGridLayout
+                        className="template-canvas"
+                        cols={{ lg: 12, md: 12, sm: 12, xs: 12, xxs: 12 }}
+                        width={templateCanvasWidth}
+                        layouts={{
+                          lg: templateWidgets.map((widget) => ({
+                            i: widget.id,
+                            x: widget.x,
+                            y: widget.y,
+                            w: widget.w,
+                            h: widget.h,
+                            minW: 3,
+                            maxW: 12,
+                            minH: 2,
+                            maxH: 12,
+                            resizeHandles: ['s', 'e', 'se'],
+                          })),
+                        }}
+                        gridConfig={{
+                          cols: 12,
+                          rowHeight: 54,
+                          margin: [10, 10],
+                          containerPadding: [10, 10],
+                        }}
+                        dragConfig={{
+                          enabled: true,
+                          bounded: true,
+                          handle: '.template-widget-handle',
+                          cancel: 'input, textarea, iframe, button',
+                        }}
+                        resizeConfig={{
+                          enabled: true,
+                          handles: ['s', 'e', 'se'],
+                        }}
+                        onLayoutChange={handleTemplateLayoutChange}
+                      >
+                        {templateWidgets.map((widget) => (
+                          <article
+                            className={
+                              selectedTemplateWidgetId === widget.id
+                                ? 'template-widget is-selected'
+                                : 'template-widget'
+                            }
+                            key={widget.id}
+                            onClick={() => setSelectedTemplateWidgetId(widget.id)}
+                          >
+                            <div className="template-widget-handle">
+                              <strong>{widget.title}</strong>
+                              <span>
+                                {widget.w} x {widget.h}
+                              </span>
+                            </div>
+
+                            <div className="template-widget-preview">
+                              {widget.url ? (
+                                <iframe
+                                  src={widget.url}
+                                  title={widget.title}
+                                  loading="lazy"
+                                  sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+                                />
+                              ) : (
+                                <p>Укажите ссылку сайта в настройках виджета.</p>
+                              )}
+                            </div>
+                          </article>
+                        ))}
+                      </ResponsiveGridLayout>
+                    )}
+                  </div>
                 </div>
+
+                <aside className="template-inspector">
+                  <h3>Настройка виджета</h3>
+
+                  {selectedTemplateWidget ? (
+                    <div className="template-inspector-fields">
+                      <label>
+                        <span>Название</span>
+                        <input
+                          value={selectedTemplateWidget.title}
+                          onChange={(event) => updateTemplateWidget('title', event.target.value)}
+                        />
+                      </label>
+
+                      <label>
+                        <span>Сайт внутри виджета</span>
+                        <input
+                          value={selectedTemplateWidget.url}
+                          onChange={(event) => updateTemplateWidget('url', event.target.value)}
+                          placeholder="https://example.com"
+                        />
+                      </label>
+
+                      <div className="template-size-fields">
+                        <label>
+                          <span>Ширина, колонки</span>
+                          <input
+                            min="3"
+                            max="12"
+                            type="number"
+                            value={selectedTemplateWidget.w}
+                            onChange={(event) => updateTemplateWidgetNumber('w', event.target.value)}
+                          />
+                        </label>
+
+                        <label>
+                          <span>Высота, строки</span>
+                          <input
+                            min="2"
+                            max="12"
+                            type="number"
+                            value={selectedTemplateWidget.h}
+                            onChange={(event) => updateTemplateWidgetNumber('h', event.target.value)}
+                          />
+                        </label>
+                      </div>
+
+                      <button
+                        className="template-remove-button"
+                        type="button"
+                        onClick={removeTemplateWidget}
+                      >
+                        Удалить виджет
+                      </button>
+                    </div>
+                  ) : (
+                    <p>Выберите виджет на экране, чтобы настроить его текст.</p>
+                  )}
+                </aside>
               </section>
             </section>
           ) : view === 'emergency' ? (
