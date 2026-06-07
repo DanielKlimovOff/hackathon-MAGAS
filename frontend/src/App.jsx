@@ -25,6 +25,7 @@ import {
   logout,
   register,
   resetEmergency,
+  saveTemplate,
 } from './services/api'
 import './App.css'
 
@@ -551,6 +552,8 @@ function App() {
   const [widgetSize, setWidgetSize] = useState(3)
   const [widgetHeight, setWidgetHeight] = useState(4)
   const [widgetUrl, setWidgetUrl] = useState('')
+  const [templateSaveMessage, setTemplateSaveMessage] = useState('')
+  const [templatePublicUrl, setTemplatePublicUrl] = useState('')
   const [selectedTemplateWidgetId, setSelectedTemplateWidgetId] = useState(null)
   const templateCanvasRef = useRef(null)
   const [templateCanvasWidth, setTemplateCanvasWidth] = useState(0)
@@ -886,7 +889,7 @@ function App() {
     }
   }
 
-  function startTemplateWidgetDrag(event, widgetId) {
+  function startTemplateWidgetResize(event, widgetId, direction) {
   if (!templateCanvasWidth) {
     return
   }
@@ -906,25 +909,52 @@ function App() {
   const startClientY = event.clientY
   const startX = widget.x
   const startY = widget.y
+  const startWidth = widget.w
+  const startHeight = widget.h
 
   function handlePointerMove(pointerEvent) {
     pointerEvent.preventDefault()
 
-    const nextX = clampTemplateValue(
-      Math.round(startX + (pointerEvent.clientX - startClientX) / templateColumnStep),
-      0,
-      TEMPLATE_COLUMNS - widget.w,
-    )
-
-    const nextY = Math.max(
-      0,
-      Math.round(startY + (pointerEvent.clientY - startClientY) / templateRowStep),
-    )
+    const widthDelta = Math.round((pointerEvent.clientX - startClientX) / templateColumnStep)
+    const heightDelta = Math.round((pointerEvent.clientY - startClientY) / templateRowStep)
 
     setTemplateWidgets((currentWidgets) =>
-      currentWidgets.map((currentWidget) =>
-        currentWidget.id === widgetId ? { ...currentWidget, x: nextX, y: nextY } : currentWidget,
-      ),
+      currentWidgets.map((currentWidget) => {
+        if (currentWidget.id !== widgetId) {
+          return currentWidget
+        }
+
+        let nextX = startX
+        let nextY = startY
+        let nextWidth = startWidth
+        let nextHeight = startHeight
+
+        if (direction.includes('e')) {
+          nextWidth = clampTemplateValue(startWidth + widthDelta, 1, TEMPLATE_COLUMNS - startX)
+        }
+
+        if (direction.includes('w')) {
+          nextX = clampTemplateValue(startX + widthDelta, 0, startX + startWidth - 1)
+          nextWidth = startWidth + startX - nextX
+        }
+
+        if (direction.includes('s')) {
+          nextHeight = clampTemplateValue(startHeight + heightDelta, 1, 20)
+        }
+
+        if (direction.includes('n')) {
+          nextY = Math.max(0, startY + heightDelta)
+          nextHeight = Math.max(1, startHeight + startY - nextY)
+        }
+
+        return {
+          ...currentWidget,
+          x: nextX,
+          y: nextY,
+          w: nextWidth,
+          h: nextHeight,
+        }
+      }),
     )
   }
 
@@ -937,58 +967,6 @@ function App() {
   event.currentTarget.addEventListener('pointermove', handlePointerMove)
   event.currentTarget.addEventListener('pointerup', handlePointerUp)
 }
-
-  function startTemplateWidgetResize(event, widgetId, direction) {
-    if (!templateCanvasWidth) {
-      return
-    }
-
-    event.preventDefault()
-    event.stopPropagation()
-    setSelectedTemplateWidgetId(widgetId)
-
-    const widget = templateWidgets.find((currentWidget) => currentWidget.id === widgetId)
-
-    if (!widget) {
-      return
-    }
-
-    const startClientX = event.clientX
-    const startClientY = event.clientY
-    const startWidth = widget.w
-    const startHeight = widget.h
-
-    function handlePointerMove(pointerEvent) {
-      const widthDelta = Math.round((pointerEvent.clientX - startClientX) / templateColumnStep)
-      const heightDelta = Math.round((pointerEvent.clientY - startClientY) / templateRowStep)
-
-      setTemplateWidgets((currentWidgets) =>
-        currentWidgets.map((currentWidget) => {
-          if (currentWidget.id !== widgetId) {
-            return currentWidget
-          }
-
-          return {
-            ...currentWidget,
-            h: direction.includes('s')
-              ? clampTemplateValue(startHeight + heightDelta, 2, 12)
-              : currentWidget.h,
-            w: direction.includes('e')
-              ? clampTemplateValue(startWidth + widthDelta, 3, TEMPLATE_COLUMNS - currentWidget.x)
-              : currentWidget.w,
-          }
-        }),
-      )
-    }
-
-    function handlePointerUp() {
-      window.removeEventListener('pointermove', handlePointerMove)
-      window.removeEventListener('pointerup', handlePointerUp)
-    }
-
-    window.addEventListener('pointermove', handlePointerMove)
-    window.addEventListener('pointerup', handlePointerUp)
-  }
 
   function updateTemplateWidgetNumber(field, value) {
     const limits = {
@@ -1018,6 +996,40 @@ function App() {
 
     return `https://${trimmedValue}`
   }
+
+  async function handleSaveTemplate() {
+  const payload = {
+    building_id: selectedHouse.id,
+    name: 'Шаблон для ТВ',
+    grid: {
+      columns: TEMPLATE_COLUMNS,
+      row_height: TEMPLATE_ROW_HEIGHT,
+      gap: TEMPLATE_GAP,
+      padding: TEMPLATE_PADDING,
+    },
+    widgets: templateWidgets.map((widget) => ({
+      id: widget.id,
+      title: widget.title,
+      url: normalizeWidgetUrl(widget.url),
+      x: widget.x,
+      y: widget.y,
+      width: widget.w,
+      height: widget.h,
+    })),
+  }
+
+  try {
+    const response = await saveTemplate(payload)
+    const publicUrl =
+      response?.url || response?.link || response?.public_url || response?.data?.url || ''
+
+    setTemplatePublicUrl(publicUrl)
+    setTemplateSaveMessage('Шаблон сохранен')
+  } catch {
+    setTemplatePublicUrl('')
+    setTemplateSaveMessage('Не удалось сохранить шаблон')
+  }
+}
 
   function formatScreenCount(count) {
     if (count % 10 === 1 && count % 100 !== 11) {
@@ -1176,9 +1188,20 @@ function App() {
                     <p>Создавайте виджеты, двигайте их мышкой и настраивайте содержимое.</p>
                   </div>
 
-                  <button className="send-template-button" type="button">
+                  <button className="send-template-button" type="button" onClick={handleSaveTemplate}>
                     Сохранить шаблон
                   </button>
+                  {templateSaveMessage && (
+                    <div className="template-save-message">
+                      <span>{templateSaveMessage}</span>
+                                    
+                      {templatePublicUrl && (
+                        <a href={templatePublicUrl} target="_blank" rel="noreferrer">
+                          Открыть шаблон
+                        </a>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 <div className="template-builder-form">
@@ -1258,10 +1281,7 @@ function App() {
                               style={getTemplateWidgetStyle(widget)}
                               onClick={() => setSelectedTemplateWidgetId(widget.id)}
                             >
-                              <div
-                                className="template-widget-handle"
-                                onPointerDown={(event) => startTemplateWidgetDrag(event, widget.id)}
-                              >
+                              <div className="template-widget-handle">
                                 <strong>{widget.title}</strong>
                                 <span>
                                   {widget.w} x {widget.h}
@@ -1308,6 +1328,26 @@ function App() {
                                 onPointerDown={(event) =>
                                   startTemplateWidgetResize(event, widget.id, 'se')
                                 }
+                              />
+                              <span
+                                className="template-widget-resize-handle is-west"
+                                onPointerDown={(event) => startTemplateWidgetResize(event, widget.id, 'w')}
+                              />
+                              <span
+                                className="template-widget-resize-handle is-north"
+                                onPointerDown={(event) => startTemplateWidgetResize(event, widget.id, 'n')}
+                              />
+                              <span
+                                className="template-widget-resize-handle is-north-east"
+                                onPointerDown={(event) => startTemplateWidgetResize(event, widget.id, 'ne')}
+                              />
+                              <span
+                                className="template-widget-resize-handle is-north-west"
+                                onPointerDown={(event) => startTemplateWidgetResize(event, widget.id, 'nw')}
+                              />
+                              <span
+                                className="template-widget-resize-handle is-south-west"
+                                onPointerDown={(event) => startTemplateWidgetResize(event, widget.id, 'sw')}
                               />
                             </article>
                           )

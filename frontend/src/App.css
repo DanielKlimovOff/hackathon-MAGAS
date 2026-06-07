@@ -1330,6 +1330,59 @@
   cursor: ew-resize;
 }
 
+.template-widget-resize-handle.is-west {
+  top: 48px;
+  bottom: 18px;
+  left: 0;
+  width: 14px;
+  cursor: ew-resize;
+}
+
+.template-widget-resize-handle.is-north {
+  top: 0;
+  right: 18px;
+  left: 18px;
+  height: 14px;
+  cursor: ns-resize;
+}
+
+.template-widget-resize-handle.is-north-east {
+  top: 0;
+  right: 0;
+  width: 20px;
+  height: 20px;
+  cursor: nesw-resize;
+}
+
+.template-widget-resize-handle.is-north-west {
+  top: 0;
+  left: 0;
+  width: 20px;
+  height: 20px;
+  cursor: nwse-resize;
+}
+
+.template-widget-resize-handle.is-south-west {
+  bottom: 0;
+  left: 0;
+  width: 20px;
+  height: 20px;
+  cursor: nesw-resize;
+}
+
+.template-save-message {
+  display: grid;
+  gap: 6px;
+  color: #0d2930;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.template-save-message a {
+  color: #00c0c9;
+  text-decoration: none;
+}
+
 .template-widget-resize-handle.is-south {
   right: 18px;
   bottom: 0;

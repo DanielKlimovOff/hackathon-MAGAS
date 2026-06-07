@@ -63,6 +63,13 @@ export function listTemplates() {
   return request('/api/v1/templates')
 }
 
+export function saveTemplate(payload) {
+  return request('/api/v1/templates', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
 export function assignTemplate(payload) {
   return request('/api/v1/templates/assign', {
     method: 'POST',
