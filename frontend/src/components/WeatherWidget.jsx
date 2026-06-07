@@ -4,31 +4,41 @@ export default function WeatherWidget() {
     const [weather, setWeather] = useState(null);
     const [error, setError] = useState(null);
 
-    async function loadWeather() {
-        try {
-            const url =
-                "https://api.open-meteo.com/v1/forecast" +
-                "?latitude=55.7558" +
-                "&longitude=37.6173" +
-                "&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max" +
-                "&timezone=Europe%2FMoscow" +
-                "&forecast_days=3";
-
-            const response = await fetch(url);
-
-            if (!response.ok) {
-                throw new Error("Ошибка загрузки погоды");
-            }
-
-            const data = await response.json();
-            setWeather(data.daily);
-        } catch (err) {
-            setError(err.message);
-        }
-    }
-
     useEffect(() => {
-        loadWeather();
+        let ignore = false;
+
+        Promise.resolve()
+            .then(async () => {
+                const url =
+                    "https://api.open-meteo.com/v1/forecast" +
+                    "?latitude=55.7558" +
+                    "&longitude=37.6173" +
+                    "&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max" +
+                    "&timezone=Europe%2FMoscow" +
+                    "&forecast_days=1";
+
+                const response = await fetch(url);
+
+                if (!response.ok) {
+                    throw new Error("Ошибка загрузки погоды");
+                }
+
+                return response.json();
+            })
+            .then((data) => {
+                if (!ignore) {
+                    setWeather(data.daily);
+                }
+            })
+            .catch((err) => {
+                if (!ignore) {
+                    setError(err.message);
+                }
+            });
+
+        return () => {
+            ignore = true;
+        };
     }, []);
 
     if (error) {
@@ -41,7 +51,11 @@ export default function WeatherWidget() {
 
     return (
         <div className="weather-widget">
-            <h2>Погода в Москве</h2>
+            <h2>
+                Погода
+                <br />
+                в МСК
+            </h2>
 
             {weather.time.map((date, index) => (
                 <div className="weather-day" key={date}>

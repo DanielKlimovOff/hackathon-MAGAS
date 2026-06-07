@@ -1,10 +1,9 @@
 import WeatherWidget from './components/WeatherWidget'
-import WeatherWidget from './components/Widget1'
-import WeatherWidget from './components/Widget2'
-import WeatherWidget from './components/Widget3'
-import WeatherWidget from './components/Widget4'
-import WeatherWidget from './components/Widget5'
-
+import Widget1 from './components/Widget1'
+import Widget2 from './components/Widget2'
+import Widget3 from './components/Widget3'
+import Widget4 from './components/Widget4'
+import Widget5 from './components/Widget5'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import {
@@ -29,6 +28,7 @@ import {
   assignTemplate,
   createScreenCode,
   getNewScreen,
+  listBuildings,
   login,
   logout,
   register,
@@ -384,7 +384,7 @@ const screenDevices = {
   },
 }
 
-const houses = [
+const fallbackHouses = [
   {
     id: 1,
     title: 'Дом на Ленина',
@@ -539,28 +539,146 @@ const houses = [
   },
 ]
 
-function App() {
-  if (window.location.pathname === '/widget/' || window.location.pathname === '/widget') {
-    return <WeatherWidget />
+function cloneDefaultDisplays() {
+  return fallbackHouses[0].displays.map((display) => ({
+    ...display,
+    widgets: [...display.widgets],
+  }))
+}
+
+function pickFirstValue(source, keys) {
+  return keys.reduce((result, key) => {
+    if (result !== undefined && result !== null && result !== '') {
+      return result
+    }
+
+    return source?.[key]
+  }, undefined)
+}
+
+function normalizeAddress(building) {
+  const directAddress = pickFirstValue(building, [
+    'address',
+    'full_address',
+    'fullAddress',
+    'location',
+    'addr',
+  ])
+
+  if (typeof directAddress === 'string' && directAddress.trim()) {
+    return directAddress.trim()
   }
-  if (window.location.pathname === '/widget1/' || window.location.pathname === '/widget') {
-    return <Widget1 />
+
+  if (directAddress && typeof directAddress === 'object') {
+    const objectAddress = [
+      directAddress.city,
+      directAddress.street,
+      directAddress.house,
+      directAddress.building,
+    ]
+      .filter(Boolean)
+      .join(', ')
+
+    if (objectAddress) {
+      return objectAddress
+    }
   }
-  if (window.location.pathname === '/widget2/' || window.location.pathname === '/widget') {
-    return <Widget2 />
+
+  const composedAddress = [
+    building?.city,
+    building?.street,
+    building?.house,
+    building?.building,
+  ]
+    .filter(Boolean)
+    .join(', ')
+
+  return composedAddress || 'Адрес не указан'
+}
+
+function normalizeApartmentsCount(building) {
+  const apartments = pickFirstValue(building, [
+    'apartments',
+    'apartments_count',
+    'apartmentsCount',
+    'flats',
+    'flats_count',
+    'premises_count',
+    'premisesCount',
+  ])
+
+  const numericApartments = Number(apartments)
+
+  return Number.isFinite(numericApartments) && numericApartments > 0 ? numericApartments : null
+}
+
+function collectBuildings(payload) {
+  if (!payload) {
+    return []
   }
-  if (window.location.pathname === '/widget3/' || window.location.pathname === '/widget') {
-    return <Widget3 />
+
+  if (Array.isArray(payload)) {
+    return payload.flatMap(collectBuildings)
   }
-  if (window.location.pathname === '/widget4/' || window.location.pathname === '/widget') {
-    return <Widget4 />
+
+  if (typeof payload !== 'object') {
+    return []
   }
-  if (window.location.pathname === '/widget5/' || window.location.pathname === '/widget') {
-    return <Widget5 />
+
+  const nestedCollections = ['buildings', 'items', 'houses', 'complexes', 'data', 'result']
+
+  for (const key of nestedCollections) {
+    if (payload[key]) {
+      const nestedBuildings = collectBuildings(payload[key])
+
+      if (nestedBuildings.length > 0) {
+        return nestedBuildings
+      }
+    }
   }
-  const [selectedHouseId, setSelectedHouseId] = useState(houses[0].id)
+
+  return [payload]
+}
+
+function normalizeBuilding(building, index) {
+  const rawId = pickFirstValue(building, ['id', 'building_id', 'buildingId', 'crm_id', 'crmId'])
+  const numericId = Number(rawId)
+  const id = Number.isFinite(numericId) && numericId > 0 ? numericId : index + 1
+  const title =
+    pickFirstValue(building, ['name', 'title', 'display_name', 'displayName', 'complex_name']) ||
+    `ЖК ${id}`
+
+  return {
+    id,
+    title: String(title),
+    address: normalizeAddress(building),
+    apartments: normalizeApartmentsCount(building),
+    displays: cloneDefaultDisplays(),
+  }
+}
+
+function normalizeBuildingsResponse(response) {
+  const seenIds = new Set()
+
+  return collectBuildings(response)
+    .map((building, index) => normalizeBuilding(building, index))
+    .filter((building) => {
+      if (seenIds.has(building.id)) {
+        return false
+      }
+
+      seenIds.add(building.id)
+      return true
+    })
+}
+
+function DashboardApp() {
+  const [housesData, setHousesData] = useState(fallbackHouses)
+  const [selectedHouseId, setSelectedHouseId] = useState(fallbackHouses[0].id)
   const [selectedDisplayId, setSelectedDisplayId] = useState(null)
   const [carouselIndex, setCarouselIndex] = useState(0)
+  const [isBuildingsLoading, setIsBuildingsLoading] = useState(false)
+  const [buildingsMessage, setBuildingsMessage] = useState('')
   const [view, setView] = useState('home')
   const [authMode, setAuthMode] = useState('login')
   const [isAuthenticated, setIsAuthenticated] = useState(
@@ -583,7 +701,7 @@ function App() {
   const [selectedTemplateWidgetId, setSelectedTemplateWidgetId] = useState(null)
   const templateCanvasRef = useRef(null)
   const [templateCanvasWidth, setTemplateCanvasWidth] = useState(0)
-  const [emergencyHouseId, setEmergencyHouseId] = useState(houses[1].id)
+  const [emergencyHouseId, setEmergencyHouseId] = useState(fallbackHouses[1].id)
   const [emergencyScope, setEmergencyScope] = useState('all')
   const [emergencyGroupId, setEmergencyGroupId] = useState('hall')
   const [emergencyMessage, setEmergencyMessage] = useState('')
@@ -616,13 +734,17 @@ function App() {
   ])
 
   const visibleHouses = useMemo(
-    () => Array.from({ length: 4 }, (_, index) => houses[(carouselIndex + index) % houses.length]),
-    [carouselIndex],
+    () =>
+      Array.from(
+        { length: Math.min(4, housesData.length) },
+        (_, index) => housesData[(carouselIndex + index) % housesData.length],
+      ),
+    [carouselIndex, housesData],
   )
 
   const selectedHouse = useMemo(
-    () => houses.find((house) => house.id === selectedHouseId) || houses[0],
-    [selectedHouseId],
+    () => housesData.find((house) => house.id === selectedHouseId) || housesData[0],
+    [housesData, selectedHouseId],
   )
 
   const selectedDisplay = selectedHouse.displays.find((display) => display.id === selectedDisplayId)
@@ -632,7 +754,7 @@ function App() {
   const filteredDevices = selectedDevices.filter((device) =>
     device.id.toLowerCase().includes(deviceSearch.trim().toLowerCase()),
   )
-  const emergencyHouse = houses.find((house) => house.id === Number(emergencyHouseId)) || houses[0]
+  const emergencyHouse = housesData.find((house) => house.id === Number(emergencyHouseId)) || housesData[0]
   const emergencyDevices = Object.values(screenDevices[emergencyHouse.id] || {}).flat()
   const selectedEmergencyDevices = emergencyDevices.filter((device) =>
     emergencyDisplayIds.includes(device.id),
@@ -681,6 +803,60 @@ function App() {
     return () => resizeObserver.disconnect()
   }, [view])
 
+  useEffect(() => {
+    if (!isAuthenticated) {
+      return undefined
+    }
+
+    let ignore = false
+
+    Promise.resolve()
+      .then(() => {
+        if (!ignore) {
+          setIsBuildingsLoading(true)
+          setBuildingsMessage('Загружаем ЖК с сервера...')
+        }
+
+        return listBuildings()
+      })
+      .then((response) => {
+        const nextHouses = normalizeBuildingsResponse(response)
+
+        if (ignore) {
+          return
+        }
+
+        if (nextHouses.length === 0) {
+          setBuildingsMessage('Сервер не вернул список ЖК, показаны тестовые данные.')
+          return
+        }
+
+        setHousesData(nextHouses)
+        setSelectedHouseId((currentId) =>
+          nextHouses.some((house) => house.id === currentId) ? currentId : nextHouses[0].id,
+        )
+        setEmergencyHouseId((currentId) =>
+          nextHouses.some((house) => house.id === Number(currentId)) ? currentId : nextHouses[0].id,
+        )
+        setCarouselIndex(0)
+        setBuildingsMessage(`Загружено ЖК: ${nextHouses.length}`)
+      })
+      .catch(() => {
+        if (!ignore) {
+          setBuildingsMessage('Не удалось загрузить ЖК с сервера, показаны тестовые данные.')
+        }
+      })
+      .finally(() => {
+        if (!ignore) {
+          setIsBuildingsLoading(false)
+        }
+      })
+
+    return () => {
+      ignore = true
+    }
+  }, [isAuthenticated])
+
   function selectHouse(house) {
     setSelectedHouseId(house.id)
     setSelectedDisplayId(null)
@@ -692,10 +868,14 @@ function App() {
   }
 
   function shiftCarousel(direction) {
+    if (housesData.length === 0) {
+      return
+    }
+
     setCarouselIndex((currentIndex) => {
       const nextIndex = currentIndex + direction
 
-      return (nextIndex + houses.length) % houses.length
+      return (nextIndex + housesData.length) % housesData.length
     })
   }
 
@@ -1205,6 +1385,11 @@ function App() {
                   <h2>Подключенные дома</h2>
                   <p>Адреса, группы экранов и шаблоны для дисплеев ЖК</p>
                 </div>
+                {buildingsMessage && (
+                  <span className={isBuildingsLoading ? 'buildings-status is-loading' : 'buildings-status'}>
+                    {buildingsMessage}
+                  </span>
+                )}
               </section>
 
               <section className="houses-carousel" aria-label="Подключенные дома">
@@ -1234,7 +1419,9 @@ function App() {
                         <div className="house-info">
                           <h3>{house.title}</h3>
                           <p>{house.address}</p>
-                          <span>{house.apartments} квартир</span>
+                          <span>
+                            {house.apartments ? `${house.apartments} квартир` : 'ЖК из CRM'}
+                          </span>
                         </div>
                       </button>
                     ))}
@@ -1535,7 +1722,7 @@ function App() {
                           setEmergencyDisplayIds([])
                         }}
                       >
-                        {houses.map((house) => (
+                        {housesData.map((house) => (
                           <option key={house.id} value={house.id}>
                             {house.title}
                           </option>
@@ -1840,6 +2027,31 @@ function App() {
       </div>
     </div>
   )
+}
+
+function App() {
+  const pathname = window.location.pathname
+
+  if (pathname === '/widget/' || pathname === '/widget') {
+    return <WeatherWidget />
+  }
+  if (pathname === '/widget1/') {
+    return <Widget1 />
+  }
+  if (pathname === '/widget2/') {
+    return <Widget2 />
+  }
+  if (pathname === '/widget3/') {
+    return <Widget3 />
+  }
+  if (pathname === '/widget4/') {
+    return <Widget4 />
+  }
+  if (pathname === '/widget5/') {
+    return <Widget5 />
+  }
+
+  return <DashboardApp />
 }
 
 
