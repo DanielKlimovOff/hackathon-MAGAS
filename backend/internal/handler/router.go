@@ -43,7 +43,7 @@ func (h *Handler) Router(tokenAuth *jwtauth.JWTAuth) http.Handler {
 
 			r.Get("/buildings", h.GetBuildings)
 
-			r.Post("/tamplates", h.NewTemplate)
+			r.Post("/templates", h.NewTemplate)
 
 			r.Post("/logout", h.Logout)
 		})
