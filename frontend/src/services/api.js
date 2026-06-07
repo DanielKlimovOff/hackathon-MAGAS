@@ -59,6 +59,10 @@ export function listScreens() {
   return request('/api/v1/screens')
 }
 
+export function listBuildings() {
+  return request('/api/v1/buildings')
+}
+
 export function listTemplates() {
   return request('/api/v1/templates')
 }
