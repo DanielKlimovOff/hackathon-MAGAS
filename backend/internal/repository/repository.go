@@ -18,6 +18,7 @@ type Repository interface {
 	GetAllUKs(context.Context) ([]model.UK, error)
 	CreateTemplate(context.Context, model.Template) error
 	CreateWidget(context.Context, model.Widget) error
+	SetTemplateToAllScreens(context.Context, uuid.UUID, uuid.UUID) error
 }
 
 type RepositoryImpl struct {
@@ -115,6 +116,16 @@ func (r *RepositoryImpl) CreateWidget(ctx context.Context, widget model.Widget) 
 	_, err := r.db.ExecContext(ctx,
 		`INSERT INTO widgets (id, template_id, name, url, x, y, width, height) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
 		widget.ID, widget.TemplateID, widget.Name, widget.URL, widget.X, widget.Y, widget.Width, widget.Height)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r *RepositoryImpl) SetTemplateToAllScreens(ctx context.Context, templateID uuid.UUID, ukID uuid.UUID) error {
+	_, err := r.db.ExecContext(ctx,
+		`UPDATE screens SET status=$1, template_id=$2 WHERE uk_id=$3`, "active", templateID, ukID)
 	if err != nil {
 		return err
 	}

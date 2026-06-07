@@ -187,6 +187,11 @@ func (s ServiceImpl) NewTemplate(ctx context.Context, ukClaims model.UKClaims, r
 			return err
 		}
 	}
+
+	err = s.repo.SetTemplateToAllScreens(ctx, template.ID, ukClaims.ID)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 

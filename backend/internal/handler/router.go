@@ -52,6 +52,7 @@ func (h *Handler) Router(tokenAuth *jwtauth.JWTAuth) http.Handler {
 			r.Use(AuthScreenMiddleware(tokenAuth))
 
 			r.Get("/parking", h.GetFreeParkingSlots)
+			// r.Get("/")
 		})
 	})
 	return r
