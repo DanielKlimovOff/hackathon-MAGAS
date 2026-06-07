@@ -33,6 +33,7 @@ func (h *Handler) Router(tokenAuth *jwtauth.JWTAuth) http.Handler {
 			r.Post("/register", h.Register)
 
 			r.Get("/screens/new/{code}", h.NewScreen)
+			r.Get("/templates/{id}", h.GetTemplate)
 		})
 
 		r.Group(func(r chi.Router) {

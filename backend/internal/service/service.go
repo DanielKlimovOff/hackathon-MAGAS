@@ -193,6 +193,7 @@ func (s ServiceImpl) NewTemplate(ctx context.Context, ukClaims model.UKClaims, r
 	if err != nil {
 		return uuid.Nil, err
 	}
+
 	return template.ID, nil
 }
 
