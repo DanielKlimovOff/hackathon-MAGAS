@@ -52,7 +52,7 @@ CREATE TABLE IF NOT EXISTS "templates" (
 
 
 
-CREATE TABLE IF NOT EXISTS "widget" (
+CREATE TABLE IF NOT EXISTS "widgets" (
 	"id" UUID NOT NULL,
 	"template_id" UUID NOT NULL,
 	"name" TEXT NOT NULL,
