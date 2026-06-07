@@ -8,7 +8,6 @@ import Widget5 from './components/Widget5'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   ArrowUpDown,
-  Bell,
   Car,
   ChevronLeft,
   ChevronRight,
@@ -1345,9 +1344,6 @@ function DashboardApp() {
           </div>
 
           <div className="header-actions">
-            <button className="header-icon-button" type="button" aria-label="Уведомления">
-              <Bell size={18} />
-            </button>
 
             <div className="roleuser" aria-label="Профиль пользователя">
               <span className="roleuser-avatar">

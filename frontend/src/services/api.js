@@ -3,7 +3,8 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || ''
 async function request(path, options = {}) {
   const token = localStorage.getItem('accessToken')
 
-  const response = await fetch(`${API_BASE_URL}${path}`,{
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -21,7 +22,17 @@ async function request(path, options = {}) {
     return null
   }
 
-  return response.json()
+  const text = await response.text()
+
+  if (!text) {
+    return null
+  }
+
+  try {
+    return JSON.parse(text)
+  } catch {
+    return text
+  }
 }
 
 export function login(payload) {
