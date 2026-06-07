@@ -626,7 +626,7 @@ function App() {
   const templateColumnWidth =
     templateCanvasWidth > 0
       ? (templateCanvasWidth - TEMPLATE_PADDING * 2 - TEMPLATE_GAP * (TEMPLATE_COLUMNS - 1)) /
-        TEMPLATE_COLUMNS
+      TEMPLATE_COLUMNS
       : 0
   const templateColumnStep = templateColumnWidth + TEMPLATE_GAP
   const templateRowStep = TEMPLATE_ROW_HEIGHT + TEMPLATE_GAP
@@ -682,16 +682,16 @@ function App() {
     const payload =
       authMode === 'register'
         ? {
-            firstName: formData.get('firstName'),
-            lastName: formData.get('lastName'),
-            email: formData.get('email'),
-            password: formData.get('password'),
-            passwordConfirm: formData.get('passwordConfirm'),
-          }
+          firstName: formData.get('firstName'),
+          lastName: formData.get('lastName'),
+          email: formData.get('email'),
+          password: formData.get('password'),
+          passwordConfirm: formData.get('passwordConfirm'),
+        }
         : {
-            login: formData.get('login'),
-            password: formData.get('password'),
-          }
+          login: formData.get('login'),
+          password: formData.get('password'),
+        }
 
     try {
       let authResponse
@@ -848,7 +848,7 @@ function App() {
         title: widgetTitle || 'Новый виджет',
         url: normalizedUrl,
         x: 0,
-        y: Infinity,
+        y: 9999,
         w: size,
         h: height,
       },
@@ -890,83 +890,128 @@ function App() {
   }
 
   function startTemplateWidgetResize(event, widgetId, direction) {
-  if (!templateCanvasWidth) {
-    return
+    if (!templateCanvasWidth) {
+      return
+    }
+
+    event.preventDefault()
+    event.stopPropagation()
+    event.currentTarget.setPointerCapture(event.pointerId)
+    setSelectedTemplateWidgetId(widgetId)
+
+    const widget = templateWidgets.find((currentWidget) => currentWidget.id === widgetId)
+
+    if (!widget) {
+      return
+    }
+
+    const startClientX = event.clientX
+    const startClientY = event.clientY
+    const startX = widget.x
+    const startY = widget.y
+    const startWidth = widget.w
+    const startHeight = widget.h
+
+    function handlePointerMove(pointerEvent) {
+      pointerEvent.preventDefault()
+
+      const widthDelta = Math.round((pointerEvent.clientX - startClientX) / templateColumnStep)
+      const heightDelta = Math.round((pointerEvent.clientY - startClientY) / templateRowStep)
+
+      setTemplateWidgets((currentWidgets) =>
+        currentWidgets.map((currentWidget) => {
+          if (currentWidget.id !== widgetId) {
+            return currentWidget
+          }
+
+          let nextX = startX
+          let nextY = startY
+          let nextWidth = startWidth
+          let nextHeight = startHeight
+
+          if (direction.includes('e')) {
+            nextWidth = clampTemplateValue(startWidth + widthDelta, 1, TEMPLATE_COLUMNS - startX)
+          }
+
+          if (direction.includes('w')) {
+            nextX = clampTemplateValue(startX + widthDelta, 0, startX + startWidth - 1)
+            nextWidth = startWidth + startX - nextX
+          }
+
+          if (direction.includes('s')) {
+            nextHeight = clampTemplateValue(startHeight + heightDelta, 1, 20)
+          }
+
+          if (direction.includes('n')) {
+            nextY = Math.max(0, startY + heightDelta)
+            nextHeight = Math.max(1, startHeight + startY - nextY)
+          }
+
+          return {
+            ...currentWidget,
+            x: nextX,
+            y: nextY,
+            w: nextWidth,
+            h: nextHeight,
+          }
+        }),
+      )
+    }
+
+    function handlePointerUp() {
+      event.currentTarget.releasePointerCapture(event.pointerId)
+      event.currentTarget.removeEventListener('pointermove', handlePointerMove)
+      event.currentTarget.removeEventListener('pointerup', handlePointerUp)
+    }
+
+    event.currentTarget.addEventListener('pointermove', handlePointerMove)
+    event.currentTarget.addEventListener('pointerup', handlePointerUp)
   }
 
-  event.preventDefault()
-  event.stopPropagation()
-  event.currentTarget.setPointerCapture(event.pointerId)
-  setSelectedTemplateWidgetId(widgetId)
+  function startTemplateWidgetDrag(event, widgetId) {
+    if (!templateCanvasWidth) return
 
-  const widget = templateWidgets.find((currentWidget) => currentWidget.id === widgetId)
+    event.preventDefault()
+    event.stopPropagation()
+    setSelectedTemplateWidgetId(widgetId)
 
-  if (!widget) {
-    return
+    const widget = templateWidgets.find((item) => item.id === widgetId)
+    if (!widget) return
+
+    const startClientX = event.clientX
+    const startClientY = event.clientY
+    const startX = widget.x
+    const startY = widget.y
+
+    function handlePointerMove(pointerEvent) {
+      const deltaX = Math.round((pointerEvent.clientX - startClientX) / templateColumnStep)
+      const deltaY = Math.round((pointerEvent.clientY - startClientY) / templateRowStep)
+
+      setTemplateWidgets((currentWidgets) =>
+        currentWidgets.map((currentWidget) =>
+          currentWidget.id === widgetId
+            ? {
+              ...currentWidget,
+              x: clampTemplateValue(
+                startX + deltaX,
+                0,
+                TEMPLATE_COLUMNS - currentWidget.w,
+              ),
+              y: Math.max(0, startY + deltaY),
+            }
+            : currentWidget,
+        ),
+      )
+    }
+
+    function handlePointerUp() {
+      window.removeEventListener('pointermove', handlePointerMove)
+      window.removeEventListener('pointerup', handlePointerUp)
+    }
+
+    window.addEventListener('pointermove', handlePointerMove)
+    window.addEventListener('pointerup', handlePointerUp)
   }
-
-  const startClientX = event.clientX
-  const startClientY = event.clientY
-  const startX = widget.x
-  const startY = widget.y
-  const startWidth = widget.w
-  const startHeight = widget.h
-
-  function handlePointerMove(pointerEvent) {
-    pointerEvent.preventDefault()
-
-    const widthDelta = Math.round((pointerEvent.clientX - startClientX) / templateColumnStep)
-    const heightDelta = Math.round((pointerEvent.clientY - startClientY) / templateRowStep)
-
-    setTemplateWidgets((currentWidgets) =>
-      currentWidgets.map((currentWidget) => {
-        if (currentWidget.id !== widgetId) {
-          return currentWidget
-        }
-
-        let nextX = startX
-        let nextY = startY
-        let nextWidth = startWidth
-        let nextHeight = startHeight
-
-        if (direction.includes('e')) {
-          nextWidth = clampTemplateValue(startWidth + widthDelta, 1, TEMPLATE_COLUMNS - startX)
-        }
-
-        if (direction.includes('w')) {
-          nextX = clampTemplateValue(startX + widthDelta, 0, startX + startWidth - 1)
-          nextWidth = startWidth + startX - nextX
-        }
-
-        if (direction.includes('s')) {
-          nextHeight = clampTemplateValue(startHeight + heightDelta, 1, 20)
-        }
-
-        if (direction.includes('n')) {
-          nextY = Math.max(0, startY + heightDelta)
-          nextHeight = Math.max(1, startHeight + startY - nextY)
-        }
-
-        return {
-          ...currentWidget,
-          x: nextX,
-          y: nextY,
-          w: nextWidth,
-          h: nextHeight,
-        }
-      }),
-    )
-  }
-
-  function handlePointerUp() {
-    event.currentTarget.releasePointerCapture(event.pointerId)
-    event.currentTarget.removeEventListener('pointermove', handlePointerMove)
-    event.currentTarget.removeEventListener('pointerup', handlePointerUp)
-  }
-
-  event.currentTarget.addEventListener('pointermove', handlePointerMove)
-  event.currentTarget.addEventListener('pointerup', handlePointerUp)
-}
 
   function updateTemplateWidgetNumber(field, value) {
     const limits = {
@@ -998,38 +1043,38 @@ function App() {
   }
 
   async function handleSaveTemplate() {
-  const payload = {
-    building_id: selectedHouse.id,
-    name: 'Шаблон для ТВ',
-    grid: {
-      columns: TEMPLATE_COLUMNS,
-      row_height: TEMPLATE_ROW_HEIGHT,
-      gap: TEMPLATE_GAP,
-      padding: TEMPLATE_PADDING,
-    },
-    widgets: templateWidgets.map((widget) => ({
-      id: widget.id,
-      title: widget.title,
-      url: normalizeWidgetUrl(widget.url),
-      x: widget.x,
-      y: widget.y,
-      width: widget.w,
-      height: widget.h,
-    })),
-  }
+    const payload = {
+      building_id: selectedHouse.id,
+      name: 'Шаблон для ТВ',
+      grid: {
+        columns: TEMPLATE_COLUMNS,
+        row_height: TEMPLATE_ROW_HEIGHT,
+        gap: TEMPLATE_GAP,
+        padding: TEMPLATE_PADDING,
+      },
+      widgets: templateWidgets.map((widget) => ({
+        id: widget.id,
+        title: widget.title,
+        url: normalizeWidgetUrl(widget.url),
+        x: widget.x,
+        y: widget.y,
+        width: widget.w,
+        height: widget.h,
+      })),
+    }
 
-  try {
-    const response = await saveTemplate(payload)
-    const publicUrl =
-      response?.url || response?.link || response?.public_url || response?.data?.url || ''
+    try {
+      const response = await saveTemplate(payload)
+      const publicUrl =
+        response?.url || response?.link || response?.public_url || response?.data?.url || ''
 
-    setTemplatePublicUrl(publicUrl)
-    setTemplateSaveMessage('Шаблон сохранен')
-  } catch {
-    setTemplatePublicUrl('')
-    setTemplateSaveMessage('Не удалось сохранить шаблон')
+      setTemplatePublicUrl(publicUrl)
+      setTemplateSaveMessage('Шаблон сохранен')
+    } catch {
+      setTemplatePublicUrl('')
+      setTemplateSaveMessage('Не удалось сохранить шаблон')
+    }
   }
-}
 
   function formatScreenCount(count) {
     if (count % 10 === 1 && count % 100 !== 11) {
@@ -1194,7 +1239,7 @@ function App() {
                   {templateSaveMessage && (
                     <div className="template-save-message">
                       <span>{templateSaveMessage}</span>
-                                    
+
                       {templatePublicUrl && (
                         <a href={templatePublicUrl} target="_blank" rel="noreferrer">
                           Открыть шаблон
@@ -1281,7 +1326,12 @@ function App() {
                               style={getTemplateWidgetStyle(widget)}
                               onClick={() => setSelectedTemplateWidgetId(widget.id)}
                             >
-                              <div className="template-widget-handle">
+                              <div
+                                className="template-widget-handle"
+                                onPointerDown={(event) =>
+                                  startTemplateWidgetDrag(event, widget.id)
+                                }
+                              >
                                 <strong>{widget.title}</strong>
                                 <span>
                                   {widget.w} x {widget.h}
@@ -1503,7 +1553,7 @@ function App() {
                             </button>
                           ))}
                         </div>
-                        )}                        
+                      )}
                       {emergencyScope === 'selected' && (
                         <div className="emergency-display-picker">
                           {emergencyDevices.map((device) => (
