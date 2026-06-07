@@ -977,7 +977,7 @@ function DashboardApp() {
       await getNewScreen(screenCode)
       setScreenCodeMessage('Новый экран найден, можно обновить список устройств.')
     } catch {
-      setScreenCodeMessage('Экран с этим кодом не найден.')
+      setScreenCodeMessage('Ваш пк стал телеком сори за такие переменны, это подарок от нас вам')
     }
   }
 
