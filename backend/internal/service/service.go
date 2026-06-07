@@ -22,6 +22,7 @@ type Service interface {
 	GenerateConnectCode(context.Context, model.UKClaims, model.GenerateCodeRequest) (string, error)
 	NewScreen(context.Context, string) (string, error)
 	GetAllScreens(context.Context, model.UKClaims) ([]model.Screen, error)
+	NewTemplate(context.Context, model.UKClaims, model.NewTemplateRequest) error
 }
 
 type ServiceImpl struct {
@@ -157,6 +158,36 @@ func (s ServiceImpl) NewScreen(ctx context.Context, code string) (string, error)
 	}
 
 	return token, nil
+}
+
+func (s ServiceImpl) NewTemplate(ctx context.Context, ukClaims model.UKClaims, req model.NewTemplateRequest) error {
+	template := model.Template{
+		ID:   uuid.New(),
+		UKID: ukClaims.ID,
+	}
+
+	err := s.repo.CreateTemplate(ctx, template)
+	if err != nil {
+		return err
+	}
+
+	for _, widget := range req.Widgets {
+		widget := model.Widget{
+			ID:         uuid.New(),
+			TemplateID: template.ID,
+			Name:       widget.Name,
+			URL:        widget.URL,
+			X:          widget.X,
+			Y:          widget.Y,
+			Width:      widget.Width,
+			Height:     widget.Height,
+		}
+		err = s.repo.CreateWidget(ctx, widget)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (s ServiceImpl) GetAllScreens(ctx context.Context, ukClaims model.UKClaims) ([]model.Screen, error) {

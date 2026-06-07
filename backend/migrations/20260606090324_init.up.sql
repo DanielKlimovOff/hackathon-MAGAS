@@ -52,20 +52,15 @@ CREATE TABLE IF NOT EXISTS "templates" (
 
 
 
-CREATE TABLE IF NOT EXISTS "vigets" (
-	"id" UUID NOT NULL,
-	"name" TEXT NOT NULL,
-	"url" TEXT NOT NULL,
-	PRIMARY KEY("id")
-);
-
-
-
-
-CREATE TABLE IF NOT EXISTS "templates_vigets" (
+CREATE TABLE IF NOT EXISTS "widget" (
 	"id" UUID NOT NULL,
 	"template_id" UUID NOT NULL,
-	"viget_id" UUID NOT NULL,
+	"name" TEXT NOT NULL,
+	"url" TEXT NOT NULL,
+	"x" INTEGER NOT NULL,
+	"y" INTEGER NOT NULL,
+	"width" INTEGER NOT NULL,
+	"height" INTEGER NOT NULL,
 	PRIMARY KEY("id")
 );
 
@@ -84,11 +79,5 @@ ALTER TABLE "templates"
 ADD FOREIGN KEY("uk_id") REFERENCES "uks"("id")
 ON UPDATE NO ACTION ON DELETE NO ACTION;
 ALTER TABLE "screens"
-ADD FOREIGN KEY("template_id") REFERENCES "templates"("id")
-ON UPDATE NO ACTION ON DELETE NO ACTION;
-ALTER TABLE "templates_vigets"
-ADD FOREIGN KEY("template_id") REFERENCES "templates"("id")
-ON UPDATE NO ACTION ON DELETE NO ACTION;
-ALTER TABLE "templates_vigets"
-ADD FOREIGN KEY("viget_id") REFERENCES "vigets"("id")
+ADD FOREIGN KEY("widget_id") REFERENCES "widget"("id")
 ON UPDATE NO ACTION ON DELETE NO ACTION;

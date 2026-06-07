@@ -50,3 +50,33 @@ type Screen struct {
 	TemplateID  *uuid.UUID `json:"template_id,omitempty"`
 	Alert       *string    `json:"alert,omitempty"`
 }
+
+type NewTemplateRequest struct {
+	Widgets []WidgetRequest `json:"widgets"`
+}
+
+type WidgetRequest struct {
+	Name   string `json:"name"`
+	URL    string `json:"url"`
+	X      int    `json:"x"`
+	Y      int    `json:"y"`
+	Width  int    `json:"width"`
+	Height int    `json:"height"`
+}
+
+type Widget struct {
+	ID         uuid.UUID `json:"id"`
+	TemplateID uuid.UUID `json:"template_id"`
+	Name       string    `json:"name"`
+	URL        string    `json:"url"`
+	X          int       `json:"x"`
+	Y          int       `json:"y"`
+	Width      int       `json:"width"`
+	Height     int       `json:"height"`
+}
+
+type Template struct {
+	ID      uuid.UUID `json:"id"`
+	UKID    uuid.UUID `json:"uk_id"`
+	Widgets []Widget  `json:"widgets"`
+}

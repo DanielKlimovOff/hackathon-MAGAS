@@ -15,6 +15,8 @@ type Repository interface {
 	CreateScreen(context.Context, model.Screen) error
 	GetAllScreensByUKID(context.Context, uuid.UUID) ([]model.Screen, error)
 	GetAllUKs(context.Context) ([]model.UK, error)
+	CreateTemplate(context.Context, model.Template) error
+	CreateWidget(context.Context, model.Widget) error
 }
 
 type RepositoryImpl struct {
@@ -95,4 +97,25 @@ func (r *RepositoryImpl) GetAllScreensByUKID(ctx context.Context, ukID uuid.UUID
 	}
 
 	return screens, nil
+}
+
+func (r *RepositoryImpl) CreateTemplate(ctx context.Context, template model.Template) error {
+	_, err := r.db.ExecContext(ctx,
+		`INSERT INTO templates (id, uk_id)`,
+		template.ID, template.UKID)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *RepositoryImpl) CreateWidget(ctx context.Context, widget model.Widget) error {
+	_, err := r.db.ExecContext(ctx,
+		`INSERT INTO widgets (id, name, url, x, y, width, height)`,
+		widget.ID, widget.Name, widget.URL, widget.X, widget.Y, widget.Width, widget.Height)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

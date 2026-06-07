@@ -233,6 +233,27 @@ func (h *Handler) GetFreeParkingSlots(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+func (h *Handler) NewTemplate(w http.ResponseWriter, r *http.Request) {
+	ukClaims, err := getUserClaims(r.Context())
+	if err != nil {
+		handleError(w, model.ErrUnauthorized)
+		return
+	}
+
+	var req model.NewTemplateRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		handleError(w, fmt.Errorf("%w: failed to decode request body", model.ErrBadRequest))
+		return
+	}
+
+	err = h.svc.NewTemplate(r.Context(), ukClaims, req)
+	if err != nil {
+		handleError(w, err)
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
 func writeJSON(w http.ResponseWriter, status int, data any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
