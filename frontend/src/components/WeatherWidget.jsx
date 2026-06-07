@@ -51,8 +51,11 @@ export default function WeatherWidget() {
 
     return (
         <div className="weather-widget">
-            <h2>Погода</h2>
-            <h2>в МСК</h2>
+            <h2>
+                Погода
+                <br />
+                в МСК
+            </h2>
 
             {weather.time.map((date, index) => (
                 <div className="weather-day" key={date}>
