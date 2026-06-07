@@ -113,8 +113,8 @@ func (r *RepositoryImpl) CreateTemplate(ctx context.Context, template model.Temp
 
 func (r *RepositoryImpl) CreateWidget(ctx context.Context, widget model.Widget) error {
 	_, err := r.db.ExecContext(ctx,
-		`INSERT INTO widgets (id, name, url, x, y, width, height) VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-		widget.ID, widget.Name, widget.URL, widget.X, widget.Y, widget.Width, widget.Height)
+		`INSERT INTO widgets (id, template_id, name, url, x, y, width, height) VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+		widget.ID, widget.TemplateID, widget.Name, widget.URL, widget.X, widget.Y, widget.Width, widget.Height)
 	if err != nil {
 		return err
 	}
