@@ -101,7 +101,7 @@ func (r *RepositoryImpl) GetAllScreensByUKID(ctx context.Context, ukID uuid.UUID
 
 func (r *RepositoryImpl) CreateTemplate(ctx context.Context, template model.Template) error {
 	_, err := r.db.ExecContext(ctx,
-		`INSERT INTO templates (id, uk_id)`,
+		`INSERT INTO templates (id, uk_id) VALUES ($1, $2)`,
 		template.ID, template.UKID)
 	if err != nil {
 		return err
@@ -111,7 +111,7 @@ func (r *RepositoryImpl) CreateTemplate(ctx context.Context, template model.Temp
 
 func (r *RepositoryImpl) CreateWidget(ctx context.Context, widget model.Widget) error {
 	_, err := r.db.ExecContext(ctx,
-		`INSERT INTO widgets (id, name, url, x, y, width, height)`,
+		`INSERT INTO widgets (id, name, url, x, y, width, height) VALUES ($1, $2, $3, $4, $5, $6, $7)`,
 		widget.ID, widget.Name, widget.URL, widget.X, widget.Y, widget.Width, widget.Height)
 	if err != nil {
 		return err
