@@ -1,4 +1,11 @@
 import WeatherWidget from './components/WeatherWidget'
+import WeatherWidget from './components/Widget1'
+import WeatherWidget from './components/Widget2'
+import WeatherWidget from './components/Widget3'
+import WeatherWidget from './components/Widget4'
+import WeatherWidget from './components/Widget5'
+
+
 import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   ArrowUpDown,
@@ -535,6 +542,21 @@ const houses = [
 function App() {
   if (window.location.pathname === '/widget/' || window.location.pathname === '/widget') {
     return <WeatherWidget />
+  }
+  if (window.location.pathname === '/widget1/' || window.location.pathname === '/widget') {
+    return <Widget1 />
+  }
+  if (window.location.pathname === '/widget2/' || window.location.pathname === '/widget') {
+    return <Widget2 />
+  }
+  if (window.location.pathname === '/widget3/' || window.location.pathname === '/widget') {
+    return <Widget3 />
+  }
+  if (window.location.pathname === '/widget4/' || window.location.pathname === '/widget') {
+    return <Widget4 />
+  }
+  if (window.location.pathname === '/widget5/' || window.location.pathname === '/widget') {
+    return <Widget5 />
   }
   const [selectedHouseId, setSelectedHouseId] = useState(houses[0].id)
   const [selectedDisplayId, setSelectedDisplayId] = useState(null)
