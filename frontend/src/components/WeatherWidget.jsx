@@ -15,7 +15,7 @@ export default function WeatherWidget() {
                     "&longitude=37.6173" +
                     "&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max" +
                     "&timezone=Europe%2FMoscow" +
-                    "&forecast_days=3";
+                    "&forecast_days=1";
 
                 const response = await fetch(url);
 
@@ -51,7 +51,8 @@ export default function WeatherWidget() {
 
     return (
         <div className="weather-widget">
-            <h2>Погода в Москве</h2>
+            <h2>Погода</h2>
+            <h2>в МСК</h2>
 
             {weather.time.map((date, index) => (
                 <div className="weather-day" key={date}>
