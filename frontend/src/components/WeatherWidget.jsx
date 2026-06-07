@@ -1,8 +1,13 @@
 export default function WeatherWidget() {
     return (
-        <div>
-            <h1>Погода</h1>
-            <p>+20°C</p>
+        <div
+            style={{
+                padding: '50px',
+                fontSize: '48px',
+                textAlign: 'center',
+            }}
+        >
+            WIDGET Работает
         </div>
     )
 }
