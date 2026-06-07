@@ -27,6 +27,7 @@ import {
   assignTemplate,
   createScreenCode,
   getNewScreen,
+  getTemplate,
   listBuildings,
   login,
   logout,
@@ -669,6 +670,127 @@ function normalizeBuildingsResponse(response) {
       seenIds.add(building.id)
       return true
     })
+}
+
+function normalizeTemplateUrl(value) {
+  const trimmedValue = String(value || '').trim()
+
+  if (!trimmedValue) {
+    return ''
+  }
+
+  if (/^https?:\/\//i.test(trimmedValue)) {
+    return trimmedValue
+  }
+
+  return `https://${trimmedValue}`
+}
+
+function getTemplateWidgets(response) {
+  return (
+    response?.widgets ||
+    response?.data?.widgets ||
+    response?.template?.widgets ||
+    []
+  )
+}
+
+function TemplateTvScreen({ templateId }) {
+  const [template, setTemplate] = useState(null)
+  const [status, setStatus] = useState('loading')
+
+  useEffect(() => {
+    let isCancelled = false
+
+    async function loadTemplate() {
+      try {
+        const response = await getTemplate(templateId)
+
+        if (isCancelled) {
+          return
+        }
+
+        setTemplate(response)
+        setStatus('ready')
+      } catch {
+        if (!isCancelled) {
+          setStatus('error')
+        }
+      }
+    }
+
+    loadTemplate()
+
+    return () => {
+      isCancelled = true
+    }
+  }, [templateId])
+
+  const widgets = getTemplateWidgets(template)
+  const totalRows = Math.max(
+    16,
+    ...widgets.map((widget) => Number(widget.y || 0) + Number(widget.height || widget.h || 1)),
+  )
+
+  if (status === 'loading') {
+    return (
+      <main className="tv-template-page">
+        <section className="tv-template-screen">
+          <p className="tv-template-state">Загружаем шаблон...</p>
+        </section>
+      </main>
+    )
+  }
+
+  if (status === 'error') {
+    return (
+      <main className="tv-template-page">
+        <section className="tv-template-screen">
+          <p className="tv-template-state">Шаблон не найден</p>
+        </section>
+      </main>
+    )
+  }
+
+  return (
+    <main className="tv-template-page">
+      <section className="tv-template-screen" aria-label="Шаблон для экрана">
+        {widgets.map((widget) => {
+          const x = Number(widget.x || 0)
+          const y = Number(widget.y || 0)
+          const width = Number(widget.width || widget.w || 1)
+          const height = Number(widget.height || widget.h || 1)
+          const widgetUrl = normalizeTemplateUrl(widget.url)
+
+          return (
+            <article
+              className="tv-template-widget"
+              key={widget.id || `${widget.name}-${x}-${y}`}
+              style={{
+                left: `${(x / TEMPLATE_COLUMNS) * 100}%`,
+                top: `${(y / totalRows) * 100}%`,
+                width: `${(width / TEMPLATE_COLUMNS) * 100}%`,
+                height: `${(height / totalRows) * 100}%`,
+              }}
+            >
+              {widgetUrl ? (
+                <iframe
+                  src={widgetUrl}
+                  title={widget.name || 'Виджет'}
+                  loading="eager"
+                  sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+                />
+              ) : (
+                <div className="tv-template-widget-empty">
+                  <strong>{widget.name || 'Виджет'}</strong>
+                </div>
+              )}
+            </article>
+          )
+        })}
+      </section>
+    </main>
+  )
 }
 
 function DashboardApp() {
@@ -2027,6 +2149,11 @@ function DashboardApp() {
 
 function App() {
   const pathname = window.location.pathname
+  const templateMatch = pathname.match(/^\/templates\/([^/]+)\/?$/)
+
+  if (templateMatch) {
+    return <TemplateTvScreen templateId={decodeURIComponent(templateMatch[1])} />
+  }
 
   if (pathname === '/widget/' || pathname === '/widget') {
     return <WeatherWidget />
