@@ -1248,6 +1248,8 @@
   border-bottom: 1px solid #eef2f3;
   background: #fff;
   cursor: grab;
+  touch-action: none;
+  user-select: none;
 }
 
 .template-widget-handle:active {

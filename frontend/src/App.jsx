@@ -887,48 +887,56 @@ function App() {
   }
 
   function startTemplateWidgetDrag(event, widgetId) {
-    if (!templateCanvasWidth) {
-      return
-    }
-
-    event.preventDefault()
-    event.stopPropagation()
-    setSelectedTemplateWidgetId(widgetId)
-
-    const widget = templateWidgets.find((currentWidget) => currentWidget.id === widgetId)
-
-    if (!widget) {
-      return
-    }
-
-    const startClientX = event.clientX
-    const startClientY = event.clientY
-    const startX = widget.x
-    const startY = widget.y
-
-    function handlePointerMove(pointerEvent) {
-      const nextX = clampTemplateValue(
-        Math.round(startX + (pointerEvent.clientX - startClientX) / templateColumnStep),
-        0,
-        TEMPLATE_COLUMNS - widget.w,
-      )
-      const nextY = Math.max(0, Math.round(startY + (pointerEvent.clientY - startClientY) / templateRowStep))
-
-      setTemplateWidgets((currentWidgets) =>
-        currentWidgets.map((currentWidget) =>
-          currentWidget.id === widgetId ? { ...currentWidget, x: nextX, y: nextY } : currentWidget,
-        ),
-      )
-    }
-
-    function handlePointerUp() {
-      window.removeEventListener('pointermove', handlePointerMove)
-      window.removeEventListener('pointerup', handlePointerUp)
-    }
-
-    window.addEventListener('pointermove', handlePointerMove)
-    window.addEventListener('pointerup', handlePointerUp)
+  if (!templateCanvasWidth) {
+    return
   }
+
+  event.preventDefault()
+  event.stopPropagation()
+  event.currentTarget.setPointerCapture(event.pointerId)
+  setSelectedTemplateWidgetId(widgetId)
+
+  const widget = templateWidgets.find((currentWidget) => currentWidget.id === widgetId)
+
+  if (!widget) {
+    return
+  }
+
+  const startClientX = event.clientX
+  const startClientY = event.clientY
+  const startX = widget.x
+  const startY = widget.y
+
+  function handlePointerMove(pointerEvent) {
+    pointerEvent.preventDefault()
+
+    const nextX = clampTemplateValue(
+      Math.round(startX + (pointerEvent.clientX - startClientX) / templateColumnStep),
+      0,
+      TEMPLATE_COLUMNS - widget.w,
+    )
+
+    const nextY = Math.max(
+      0,
+      Math.round(startY + (pointerEvent.clientY - startClientY) / templateRowStep),
+    )
+
+    setTemplateWidgets((currentWidgets) =>
+      currentWidgets.map((currentWidget) =>
+        currentWidget.id === widgetId ? { ...currentWidget, x: nextX, y: nextY } : currentWidget,
+      ),
+    )
+  }
+
+  function handlePointerUp() {
+    event.currentTarget.releasePointerCapture(event.pointerId)
+    event.currentTarget.removeEventListener('pointermove', handlePointerMove)
+    event.currentTarget.removeEventListener('pointerup', handlePointerUp)
+  }
+
+  event.currentTarget.addEventListener('pointermove', handlePointerMove)
+  event.currentTarget.addEventListener('pointerup', handlePointerUp)
+}
 
   function startTemplateWidgetResize(event, widgetId, direction) {
     if (!templateCanvasWidth) {
