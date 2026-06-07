@@ -1,3 +1,4 @@
+import WeatherWidget from './components/WeatherWidget'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   ArrowUpDown,
@@ -532,6 +533,9 @@ const houses = [
 ]
 
 function App() {
+  if (window.location.pathname === '/widget/' || window.location.pathname === '/widget') {
+    return <WeatherWidget />
+  }
   const [selectedHouseId, setSelectedHouseId] = useState(houses[0].id)
   const [selectedDisplayId, setSelectedDisplayId] = useState(null)
   const [carouselIndex, setCarouselIndex] = useState(0)
@@ -1002,14 +1006,14 @@ function App() {
         currentWidgets.map((currentWidget) =>
           currentWidget.id === widgetId
             ? {
-                ...currentWidget,
-                x: clampTemplateValue(
-                  startX + deltaX,
-                  0,
-                  TEMPLATE_COLUMNS - currentWidget.w,
-                ),
-                y: Math.max(0, startY + deltaY),
-              }
+              ...currentWidget,
+              x: clampTemplateValue(
+                startX + deltaX,
+                0,
+                TEMPLATE_COLUMNS - currentWidget.w,
+              ),
+              y: Math.max(0, startY + deltaY),
+            }
             : currentWidget,
         ),
       )
@@ -1054,29 +1058,29 @@ function App() {
   }
 
   async function handleSaveTemplate() {
-  const payload = {
-    widgets: templateWidgets.map((widget) => ({
-      name: widget.title,
-      url: normalizeWidgetUrl(widget.url),
-      x: widget.x,
-      y: widget.y,
-      width: widget.w,
-      height: widget.h,
-    })),
-  }
+    const payload = {
+      widgets: templateWidgets.map((widget) => ({
+        name: widget.title,
+        url: normalizeWidgetUrl(widget.url),
+        x: widget.x,
+        y: widget.y,
+        width: widget.w,
+        height: widget.h,
+      })),
+    }
 
-  try {
-    const response = await saveTemplate(payload)
-    const publicUrl =
-      response?.url || response?.link || response?.public_url || response?.data?.url || ''
+    try {
+      const response = await saveTemplate(payload)
+      const publicUrl =
+        response?.url || response?.link || response?.public_url || response?.data?.url || ''
 
-    setTemplatePublicUrl(publicUrl)
-    setTemplateSaveMessage('Шаблон сохранен')
-  } catch {
-    setTemplatePublicUrl('')
-    setTemplateSaveMessage('Не удалось сохранить шаблон')
+      setTemplatePublicUrl(publicUrl)
+      setTemplateSaveMessage('Шаблон сохранен')
+    } catch {
+      setTemplatePublicUrl('')
+      setTemplateSaveMessage('Не удалось сохранить шаблон')
+    }
   }
-}
 
   function formatScreenCount(count) {
     if (count % 10 === 1 && count % 100 !== 11) {
@@ -1815,5 +1819,7 @@ function App() {
     </div>
   )
 }
+
+
 
 export default App
