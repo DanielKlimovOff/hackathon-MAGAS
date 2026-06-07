@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   ArrowUpDown,
   Bell,
@@ -26,10 +26,12 @@ import {
   register,
   resetEmergency,
 } from './services/api'
-import { Responsive as ResponsiveGridLayout, useContainerWidth } from 'react-grid-layout'
-import 'react-grid-layout/css/styles.css'
-import 'react-resizable/css/styles.css'
 import './App.css'
+
+const TEMPLATE_COLUMNS = 12
+const TEMPLATE_ROW_HEIGHT = 54
+const TEMPLATE_GAP = 10
+const TEMPLATE_PADDING = 10
 
 function AuthScreen({ mode, onModeChange, onSubmit }) {
   const isRegister = mode === 'register'
@@ -550,6 +552,8 @@ function App() {
   const [widgetHeight, setWidgetHeight] = useState(4)
   const [widgetUrl, setWidgetUrl] = useState('')
   const [selectedTemplateWidgetId, setSelectedTemplateWidgetId] = useState(null)
+  const templateCanvasRef = useRef(null)
+  const [templateCanvasWidth, setTemplateCanvasWidth] = useState(0)
   const [emergencyHouseId, setEmergencyHouseId] = useState(houses[1].id)
   const [emergencyScope, setEmergencyScope] = useState('all')
   const [emergencyGroupId, setEmergencyGroupId] = useState('hall')
@@ -615,11 +619,38 @@ function App() {
   const selectedTemplateWidget = templateWidgets.find(
     (widget) => widget.id === selectedTemplateWidgetId,
   )
-  const {
-    width: templateCanvasWidth,
-    containerRef: templateCanvasRef,
-    mounted: isTemplateCanvasMounted,
-  } = useContainerWidth()
+  const isTemplateCanvasMounted = templateCanvasWidth > 0
+  const templateColumnWidth =
+    templateCanvasWidth > 0
+      ? (templateCanvasWidth - TEMPLATE_PADDING * 2 - TEMPLATE_GAP * (TEMPLATE_COLUMNS - 1)) /
+        TEMPLATE_COLUMNS
+      : 0
+  const templateColumnStep = templateColumnWidth + TEMPLATE_GAP
+  const templateRowStep = TEMPLATE_ROW_HEIGHT + TEMPLATE_GAP
+  const templateCanvasHeight = Math.max(
+    760,
+    ...templateWidgets.map(
+      (widget) => TEMPLATE_PADDING + widget.y * templateRowStep + widget.h * TEMPLATE_ROW_HEIGHT + (widget.h - 1) * TEMPLATE_GAP + TEMPLATE_PADDING,
+    ),
+  )
+
+  useEffect(() => {
+    if (view !== 'templates' || !templateCanvasRef.current) {
+      return undefined
+    }
+
+    const canvasElement = templateCanvasRef.current
+    const updateCanvasWidth = () => {
+      setTemplateCanvasWidth(canvasElement.clientWidth)
+    }
+
+    updateCanvasWidth()
+
+    const resizeObserver = new ResizeObserver(updateCanvasWidth)
+    resizeObserver.observe(canvasElement)
+
+    return () => resizeObserver.disconnect()
+  }, [view])
 
   function selectHouse(house) {
     setSelectedHouseId(house.id)
@@ -805,13 +836,14 @@ function App() {
     const size = Number(widgetSize)
     const height = Number(widgetHeight)
     const id = `widget-${Date.now()}`
+    const normalizedUrl = normalizeWidgetUrl(widgetUrl)
 
     setTemplateWidgets((currentWidgets) => [
       ...currentWidgets,
       {
         id,
         title: widgetTitle || 'Новый виджет',
-        url: widgetUrl,
+        url: normalizedUrl,
         x: 0,
         y: Infinity,
         w: size,
@@ -824,26 +856,6 @@ function App() {
     setWidgetSize(3)
     setWidgetHeight(4)
     setWidgetUrl('')
-  }
-
-  function handleTemplateLayoutChange(layout) {
-    setTemplateWidgets((currentWidgets) =>
-      currentWidgets.map((widget) => {
-        const layoutItem = layout.find((item) => item.i === widget.id)
-
-        if (!layoutItem) {
-          return widget
-        }
-
-        return {
-          ...widget,
-          x: layoutItem.x,
-          y: layoutItem.y,
-          w: layoutItem.w,
-          h: layoutItem.h,
-        }
-      }),
-    )
   }
 
   function updateTemplateWidget(field, value) {
@@ -861,6 +873,115 @@ function App() {
     setSelectedTemplateWidgetId(null)
   }
 
+  function clampTemplateValue(value, min, max) {
+    return Math.min(max, Math.max(min, value))
+  }
+
+  function getTemplateWidgetStyle(widget) {
+    return {
+      height: widget.h * TEMPLATE_ROW_HEIGHT + (widget.h - 1) * TEMPLATE_GAP,
+      left: TEMPLATE_PADDING + widget.x * templateColumnStep,
+      top: TEMPLATE_PADDING + widget.y * templateRowStep,
+      width: widget.w * templateColumnWidth + (widget.w - 1) * TEMPLATE_GAP,
+    }
+  }
+
+  function startTemplateWidgetDrag(event, widgetId) {
+    if (!templateCanvasWidth) {
+      return
+    }
+
+    event.preventDefault()
+    event.stopPropagation()
+    setSelectedTemplateWidgetId(widgetId)
+
+    const widget = templateWidgets.find((currentWidget) => currentWidget.id === widgetId)
+
+    if (!widget) {
+      return
+    }
+
+    const startClientX = event.clientX
+    const startClientY = event.clientY
+    const startX = widget.x
+    const startY = widget.y
+
+    function handlePointerMove(pointerEvent) {
+      const nextX = clampTemplateValue(
+        Math.round(startX + (pointerEvent.clientX - startClientX) / templateColumnStep),
+        0,
+        TEMPLATE_COLUMNS - widget.w,
+      )
+      const nextY = Math.max(0, Math.round(startY + (pointerEvent.clientY - startClientY) / templateRowStep))
+
+      setTemplateWidgets((currentWidgets) =>
+        currentWidgets.map((currentWidget) =>
+          currentWidget.id === widgetId ? { ...currentWidget, x: nextX, y: nextY } : currentWidget,
+        ),
+      )
+    }
+
+    function handlePointerUp() {
+      window.removeEventListener('pointermove', handlePointerMove)
+      window.removeEventListener('pointerup', handlePointerUp)
+    }
+
+    window.addEventListener('pointermove', handlePointerMove)
+    window.addEventListener('pointerup', handlePointerUp)
+  }
+
+  function startTemplateWidgetResize(event, widgetId, direction) {
+    if (!templateCanvasWidth) {
+      return
+    }
+
+    event.preventDefault()
+    event.stopPropagation()
+    setSelectedTemplateWidgetId(widgetId)
+
+    const widget = templateWidgets.find((currentWidget) => currentWidget.id === widgetId)
+
+    if (!widget) {
+      return
+    }
+
+    const startClientX = event.clientX
+    const startClientY = event.clientY
+    const startWidth = widget.w
+    const startHeight = widget.h
+
+    function handlePointerMove(pointerEvent) {
+      const widthDelta = Math.round((pointerEvent.clientX - startClientX) / templateColumnStep)
+      const heightDelta = Math.round((pointerEvent.clientY - startClientY) / templateRowStep)
+
+      setTemplateWidgets((currentWidgets) =>
+        currentWidgets.map((currentWidget) => {
+          if (currentWidget.id !== widgetId) {
+            return currentWidget
+          }
+
+          return {
+            ...currentWidget,
+            h: direction.includes('s')
+              ? clampTemplateValue(startHeight + heightDelta, 2, 12)
+              : currentWidget.h,
+            w: direction.includes('e')
+              ? clampTemplateValue(startWidth + widthDelta, 3, TEMPLATE_COLUMNS - currentWidget.x)
+              : currentWidget.w,
+          }
+        }),
+      )
+    }
+
+    function handlePointerUp() {
+      window.removeEventListener('pointermove', handlePointerMove)
+      window.removeEventListener('pointerup', handlePointerUp)
+    }
+
+    window.addEventListener('pointermove', handlePointerMove)
+    window.addEventListener('pointerup', handlePointerUp)
+  }
+
   function updateTemplateWidgetNumber(field, value) {
     const limits = {
       w: { min: 3, max: 12 },
@@ -874,6 +995,20 @@ function App() {
     }
 
     updateTemplateWidget(field, Math.min(limit.max, Math.max(limit.min, nextValue)))
+  }
+
+  function normalizeWidgetUrl(value) {
+    const trimmedValue = value.trim()
+
+    if (!trimmedValue) {
+      return ''
+    }
+
+    if (/^https?:\/\//i.test(trimmedValue)) {
+      return trimmedValue
+    }
+
+    return `https://${trimmedValue}`
   }
 
   function formatScreenCount(count) {
@@ -1097,74 +1232,79 @@ function App() {
 
                   <div className="template-canvas-shell" ref={templateCanvasRef}>
                     {isTemplateCanvasMounted && (
-                      <ResponsiveGridLayout
+                      <div
                         className="template-canvas"
-                        cols={{ lg: 12, md: 12, sm: 12, xs: 12, xxs: 12 }}
-                        width={templateCanvasWidth}
-                        layouts={{
-                          lg: templateWidgets.map((widget) => ({
-                            i: widget.id,
-                            x: widget.x,
-                            y: widget.y,
-                            w: widget.w,
-                            h: widget.h,
-                            minW: 3,
-                            maxW: 12,
-                            minH: 2,
-                            maxH: 12,
-                            resizeHandles: ['s', 'e', 'se'],
-                          })),
-                        }}
-                        gridConfig={{
-                          cols: 12,
-                          rowHeight: 54,
-                          margin: [10, 10],
-                          containerPadding: [10, 10],
-                        }}
-                        dragConfig={{
-                          enabled: true,
-                          bounded: true,
-                          handle: '.template-widget-handle',
-                          cancel: 'input, textarea, iframe, button',
-                        }}
-                        resizeConfig={{
-                          enabled: true,
-                          handles: ['s', 'e', 'se'],
-                        }}
-                        onLayoutChange={handleTemplateLayoutChange}
+                        style={{ height: templateCanvasHeight }}
                       >
-                        {templateWidgets.map((widget) => (
-                          <article
-                            className={
-                              selectedTemplateWidgetId === widget.id
-                                ? 'template-widget is-selected'
-                                : 'template-widget'
-                            }
-                            key={widget.id}
-                            onClick={() => setSelectedTemplateWidgetId(widget.id)}
-                          >
-                            <div className="template-widget-handle">
-                              <strong>{widget.title}</strong>
-                              <span>
-                                {widget.w} x {widget.h}
-                              </span>
-                            </div>
+                        {templateWidgets.map((widget) => {
+                          const widgetFrameUrl = normalizeWidgetUrl(widget.url)
 
-                            <div className="template-widget-preview">
-                              {widget.url ? (
-                                <iframe
-                                  src={widget.url}
-                                  title={widget.title}
-                                  loading="lazy"
-                                  sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
-                                />
-                              ) : (
-                                <p>Укажите ссылку сайта в настройках виджета.</p>
-                              )}
-                            </div>
-                          </article>
-                        ))}
-                      </ResponsiveGridLayout>
+                          return (
+                            <article
+                              className={
+                                selectedTemplateWidgetId === widget.id
+                                  ? 'template-widget is-selected'
+                                  : 'template-widget'
+                              }
+                              key={widget.id}
+                              style={getTemplateWidgetStyle(widget)}
+                              onClick={() => setSelectedTemplateWidgetId(widget.id)}
+                            >
+                              <div
+                                className="template-widget-handle"
+                                onPointerDown={(event) => startTemplateWidgetDrag(event, widget.id)}
+                              >
+                                <strong>{widget.title}</strong>
+                                <span>
+                                  {widget.w} x {widget.h}
+                                </span>
+                              </div>
+
+                              <div className="template-widget-preview">
+                                {widgetFrameUrl ? (
+                                  <>
+                                    <iframe
+                                      src={widgetFrameUrl}
+                                      title={widget.title}
+                                      loading="lazy"
+                                      sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+                                    />
+                                    <a
+                                      className="template-widget-open-link"
+                                      href={widgetFrameUrl}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                    >
+                                      Открыть сайт
+                                    </a>
+                                  </>
+                                ) : (
+                                  <p>Укажите ссылку сайта в настройках виджета.</p>
+                                )}
+                              </div>
+
+                              <span
+                                className="template-widget-resize-handle is-east"
+                                onPointerDown={(event) =>
+                                  startTemplateWidgetResize(event, widget.id, 'e')
+                                }
+                              />
+                              <span
+                                className="template-widget-resize-handle is-south"
+                                onPointerDown={(event) =>
+                                  startTemplateWidgetResize(event, widget.id, 's')
+                                }
+                              />
+                              <span
+                                className="template-widget-resize-handle is-corner"
+                                onPointerDown={(event) =>
+                                  startTemplateWidgetResize(event, widget.id, 'se')
+                                }
+                              />
+                            </article>
+                          )
+                        })}
+                      </div>
                     )}
                   </div>
                 </div>
@@ -1186,10 +1326,24 @@ function App() {
                         <span>Сайт внутри виджета</span>
                         <input
                           value={selectedTemplateWidget.url}
+                          onBlur={(event) =>
+                            updateTemplateWidget('url', normalizeWidgetUrl(event.target.value))
+                          }
                           onChange={(event) => updateTemplateWidget('url', event.target.value)}
                           placeholder="https://example.com"
                         />
                       </label>
+
+                      {normalizeWidgetUrl(selectedTemplateWidget.url) && (
+                        <a
+                          className="template-open-site-button"
+                          href={normalizeWidgetUrl(selectedTemplateWidget.url)}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          Открыть сайт
+                        </a>
+                      )}
 
                       <div className="template-size-fields">
                         <label>
