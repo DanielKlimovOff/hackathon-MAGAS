@@ -7,7 +7,14 @@ export default function WeatherWidget() {
                 textAlign: 'center',
             }}
         >
-            WIDGET1 Работает
+            ☎ Аварийная служба
+            +7 (999) 123-45-67
+
+            🗑 Вывоз мусора
+            Пн, Ср, Пт
+
+            📍 Офис УК
+            09:00–18:00
         </div>
     )
 }
