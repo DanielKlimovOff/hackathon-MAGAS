@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"hackathon_MAGAS/internal/model"
+	"log"
 
 	"github.com/google/uuid"
 )
@@ -100,6 +101,7 @@ func (r *RepositoryImpl) GetAllScreensByUKID(ctx context.Context, ukID uuid.UUID
 }
 
 func (r *RepositoryImpl) CreateTemplate(ctx context.Context, template model.Template) error {
+	log.Printf("template id=%s uk_id=%s", template.ID, template.UKID)
 	_, err := r.db.ExecContext(ctx,
 		`INSERT INTO templates (id, uk_id) VALUES ($1, $2)`,
 		template.ID, template.UKID)
