@@ -1043,38 +1043,29 @@ function App() {
   }
 
   async function handleSaveTemplate() {
-    const payload = {
-      building_id: selectedHouse.id,
-      name: 'Шаблон для ТВ',
-      grid: {
-        columns: TEMPLATE_COLUMNS,
-        row_height: TEMPLATE_ROW_HEIGHT,
-        gap: TEMPLATE_GAP,
-        padding: TEMPLATE_PADDING,
-      },
-      widgets: templateWidgets.map((widget) => ({
-        id: widget.id,
-        title: widget.title,
-        url: normalizeWidgetUrl(widget.url),
-        x: widget.x,
-        y: widget.y,
-        width: widget.w,
-        height: widget.h,
-      })),
-    }
-
-    try {
-      const response = await saveTemplate(payload)
-      const publicUrl =
-        response?.url || response?.link || response?.public_url || response?.data?.url || ''
-
-      setTemplatePublicUrl(publicUrl)
-      setTemplateSaveMessage('Шаблон сохранен')
-    } catch {
-      setTemplatePublicUrl('')
-      setTemplateSaveMessage('Не удалось сохранить шаблон')
-    }
+  const payload = {
+    widgets: templateWidgets.map((widget) => ({
+      name: widget.title,
+      url: normalizeWidgetUrl(widget.url),
+      x: widget.x,
+      y: widget.y,
+      width: widget.w,
+      height: widget.h,
+    })),
   }
+
+  try {
+    const response = await saveTemplate(payload)
+    const publicUrl =
+      response?.url || response?.link || response?.public_url || response?.data?.url || ''
+
+    setTemplatePublicUrl(publicUrl)
+    setTemplateSaveMessage('Шаблон сохранен')
+  } catch {
+    setTemplatePublicUrl('')
+    setTemplateSaveMessage('Не удалось сохранить шаблон')
+  }
+}
 
   function formatScreenCount(count) {
     if (count % 10 === 1 && count % 100 !== 11) {
