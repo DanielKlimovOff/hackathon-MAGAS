@@ -199,13 +199,20 @@ func (h *Handler) GetFreeParkingSlots(w http.ResponseWriter, r *http.Request) {
 
 	type ParkingResponse struct {
 		Data struct {
-			Items []interface{} `json:"items"`
+			Items []struct {
+				Buildings []struct {
+					Zones []struct {
+						Spots []struct {
+						} `json:"spots"`
+					} `json:"zones"`
+				} `json:"buildings"`
+			} `json:"items"`
 		} `json:"data"`
 	}
 
 	var respData ParkingResponse
 
-	if err := json.NewDecoder(r.Body).Decode(&respData); err != nil {
+	if err := json.NewDecoder(resp.Body).Decode(&respData); err != nil {
 		handleError(w, fmt.Errorf("%w: failed to decode request body", model.ErrBadRequest))
 		return
 	}
@@ -213,7 +220,13 @@ func (h *Handler) GetFreeParkingSlots(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", resp.Header.Get("Content-Type"))
 	w.WriteHeader(resp.StatusCode)
 
-	count_slots := len(respData.Data.Items)
+	count_slots := 0
+
+	for _, b := range respData.Data.Items[0].Buildings {
+		for _, zone := range b.Zones {
+			count_slots += len(zone.Spots)
+		}
+	}
 
 	writeJSON(w, http.StatusOK, map[string]int{
 		"free_slots": count_slots,
