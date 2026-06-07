@@ -1126,7 +1126,7 @@
 
 .template-builder-form {
   display: grid;
-  grid-template-columns: minmax(220px, 1fr) 180px auto;
+  grid-template-columns: minmax(180px, 1fr) 130px 130px minmax(220px, 1fr) auto;
   gap: 16px;
   align-items: end;
   margin-top: 26px;
@@ -1166,9 +1166,10 @@
 
 .template-editor-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 300px;
+  grid-template-columns: minmax(420px, 520px) minmax(280px, 1fr);
   gap: 22px;
   align-items: start;
+  justify-content: center;
 }
 
 .template-screen {
@@ -1195,8 +1196,12 @@
   font-size: 13px;
 }
 
+.template-canvas-shell {
+  width: 100%;
+}
+
 .template-canvas {
-  min-height: 620px;
+  min-height: 760px;
   border: 1px solid #e4e8ea;
   border-radius: 12px;
   background-color: #f8fafb;
@@ -1211,18 +1216,23 @@
   background: rgba(68, 216, 241, 0.28);
 }
 
+.template-canvas .react-resizable-handle {
+  opacity: 1;
+}
+
+.template-canvas .react-resizable-handle::after {
+  border-color: #44d8f1;
+}
+
 .template-widget {
-  display: grid;
-  align-content: space-between;
-  gap: 10px;
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
-  padding: 16px;
   border: 2px solid transparent;
   border-radius: 10px;
   color: #0d2930;
   background: #fff;
   box-shadow: 0 10px 24px rgba(16, 24, 40, 0.1);
-  cursor: grab;
 }
 
 .template-widget:active {
@@ -1233,22 +1243,31 @@
   border-color: #44d8f1;
 }
 
-.template-widget strong {
+.template-widget-handle {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  border-bottom: 1px solid #eef2f3;
+  background: #fff;
+  cursor: grab;
+}
+
+.template-widget-handle:active {
+  cursor: grabbing;
+}
+
+.template-widget-handle strong {
   overflow: hidden;
   color: #111;
-  font-size: 18px;
+  font-size: 15px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.template-widget p {
-  margin: 0;
-  color: #566466;
-  font-size: 14px;
-  line-height: 1.35;
-}
-
-.template-widget span {
+.template-widget-handle span {
   width: fit-content;
   padding: 6px 8px;
   border-radius: 8px;
@@ -1256,6 +1275,32 @@
   background: rgba(68, 216, 241, 0.18);
   font-size: 12px;
   font-weight: 900;
+  white-space: nowrap;
+}
+
+.template-widget-preview {
+  min-height: 0;
+  flex: 1;
+  display: grid;
+  place-items: center;
+  background: #f8fafb;
+}
+
+.template-widget-preview iframe {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: #fff;
+}
+
+.template-widget-preview p {
+  max-width: 220px;
+  margin: 0;
+  padding: 16px;
+  color: #869396;
+  font-size: 13px;
+  line-height: 1.4;
+  text-align: center;
 }
 
 .template-inspector {
@@ -1278,6 +1323,12 @@
 .template-inspector-fields {
   display: grid;
   gap: 16px;
+}
+
+.template-size-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
 }
 
 .template-inspector-fields textarea {

@@ -26,7 +26,7 @@ import {
   register,
   resetEmergency,
 } from './services/api'
-import { Responsive as ResponsiveGridLayout } from 'react-grid-layout'
+import { Responsive as ResponsiveGridLayout, useContainerWidth } from 'react-grid-layout'
 import 'react-grid-layout/css/styles.css'
 import 'react-resizable/css/styles.css'
 import './App.css'
@@ -547,6 +547,8 @@ function App() {
   const [templateWidgets, setTemplateWidgets] = useState([])
   const [widgetTitle, setWidgetTitle] = useState('')
   const [widgetSize, setWidgetSize] = useState(3)
+  const [widgetHeight, setWidgetHeight] = useState(4)
+  const [widgetUrl, setWidgetUrl] = useState('')
   const [selectedTemplateWidgetId, setSelectedTemplateWidgetId] = useState(null)
   const [emergencyHouseId, setEmergencyHouseId] = useState(houses[1].id)
   const [emergencyScope, setEmergencyScope] = useState('all')
@@ -613,6 +615,11 @@ function App() {
   const selectedTemplateWidget = templateWidgets.find(
     (widget) => widget.id === selectedTemplateWidgetId,
   )
+  const {
+    width: templateCanvasWidth,
+    containerRef: templateCanvasRef,
+    mounted: isTemplateCanvasMounted,
+  } = useContainerWidth()
 
   function selectHouse(house) {
     setSelectedHouseId(house.id)
@@ -796,6 +803,7 @@ function App() {
 
   function handleAddWidget() {
     const size = Number(widgetSize)
+    const height = Number(widgetHeight)
     const id = `widget-${Date.now()}`
 
     setTemplateWidgets((currentWidgets) => [
@@ -803,17 +811,19 @@ function App() {
       {
         id,
         title: widgetTitle || 'Новый виджет',
-        content: 'Текст виджета',
+        url: widgetUrl,
         x: 0,
         y: Infinity,
         w: size,
-        h: size === 6 ? 3 : 2,
+        h: height,
       },
     ])
 
     setSelectedTemplateWidgetId(id)
     setWidgetTitle('')
     setWidgetSize(3)
+    setWidgetHeight(4)
+    setWidgetUrl('')
   }
 
   function handleTemplateLayoutChange(layout) {
@@ -849,6 +859,21 @@ function App() {
       currentWidgets.filter((widget) => widget.id !== selectedTemplateWidgetId),
     )
     setSelectedTemplateWidgetId(null)
+  }
+
+  function updateTemplateWidgetNumber(field, value) {
+    const limits = {
+      w: { min: 3, max: 12 },
+      h: { min: 2, max: 12 },
+    }
+    const nextValue = Number(value)
+    const limit = limits[field]
+
+    if (!Number.isFinite(nextValue)) {
+      return
+    }
+
+    updateTemplateWidget(field, Math.min(limit.max, Math.max(limit.min, nextValue)))
   }
 
   function formatScreenCount(count) {
@@ -1035,6 +1060,27 @@ function App() {
                     </select>
                   </label>
 
+                  <label>
+                    <span>Высота</span>
+                    <select
+                      value={widgetHeight}
+                      onChange={(event) => setWidgetHeight(event.target.value)}
+                    >
+                      <option value={3}>3 строки</option>
+                      <option value={4}>4 строки</option>
+                      <option value={6}>6 строк</option>
+                    </select>
+                  </label>
+
+                  <label>
+                    <span>Сайт виджета</span>
+                    <input
+                      value={widgetUrl}
+                      onChange={(event) => setWidgetUrl(event.target.value)}
+                      placeholder="https://example.com"
+                    />
+                  </label>
+
                   <button className="connect-screen-button" type="button" onClick={handleAddWidget}>
                     <span>+</span>
                     Добавить виджет
@@ -1049,44 +1095,78 @@ function App() {
                     <strong>12 колонок</strong>
                   </div>
 
-                  <ResponsiveGridLayout
-                    className="template-canvas"
-                    cols={{ lg: 12, md: 12, sm: 12, xs: 12, xxs: 12 }}
-                    layouts={{
-                      lg: templateWidgets.map((widget) => ({
-                        i: widget.id,
-                        x: widget.x,
-                        y: widget.y,
-                        w: widget.w,
-                        h: widget.h,
-                        minW: 3,
-                        maxW: 6,
-                        minH: 2,
-                      })),
-                    }}
-                    margin={[12, 12]}
-                    rowHeight={52}
-                    onLayoutChange={handleTemplateLayoutChange}
-                    compactType={null}
-                    preventCollision={false}
-                    isBounded
-                  >
-                    {templateWidgets.map((widget) => (
-                      <article
-                        className={
-                          selectedTemplateWidgetId === widget.id
-                            ? 'template-widget is-selected'
-                            : 'template-widget'
-                        }
-                        key={widget.id}
-                        onClick={() => setSelectedTemplateWidgetId(widget.id)}
+                  <div className="template-canvas-shell" ref={templateCanvasRef}>
+                    {isTemplateCanvasMounted && (
+                      <ResponsiveGridLayout
+                        className="template-canvas"
+                        cols={{ lg: 12, md: 12, sm: 12, xs: 12, xxs: 12 }}
+                        width={templateCanvasWidth}
+                        layouts={{
+                          lg: templateWidgets.map((widget) => ({
+                            i: widget.id,
+                            x: widget.x,
+                            y: widget.y,
+                            w: widget.w,
+                            h: widget.h,
+                            minW: 3,
+                            maxW: 12,
+                            minH: 2,
+                            maxH: 12,
+                            resizeHandles: ['s', 'e', 'se'],
+                          })),
+                        }}
+                        gridConfig={{
+                          cols: 12,
+                          rowHeight: 54,
+                          margin: [10, 10],
+                          containerPadding: [10, 10],
+                        }}
+                        dragConfig={{
+                          enabled: true,
+                          bounded: true,
+                          handle: '.template-widget-handle',
+                          cancel: 'input, textarea, iframe, button',
+                        }}
+                        resizeConfig={{
+                          enabled: true,
+                          handles: ['s', 'e', 'se'],
+                        }}
+                        onLayoutChange={handleTemplateLayoutChange}
                       >
-                        <strong>{widget.title}</strong>
-                        <p>{widget.content}</p>
-                        <span>{widget.w} колонки</span>
-                      </article>
-                    ))}
-                  </ResponsiveGridLayout>
+                        {templateWidgets.map((widget) => (
+                          <article
+                            className={
+                              selectedTemplateWidgetId === widget.id
+                                ? 'template-widget is-selected'
+                                : 'template-widget'
+                            }
+                            key={widget.id}
+                            onClick={() => setSelectedTemplateWidgetId(widget.id)}
+                          >
+                            <div className="template-widget-handle">
+                              <strong>{widget.title}</strong>
+                              <span>
+                                {widget.w} x {widget.h}
+                              </span>
+                            </div>
+
+                            <div className="template-widget-preview">
+                              {widget.url ? (
+                                <iframe
+                                  src={widget.url}
+                                  title={widget.title}
+                                  loading="lazy"
+                                  sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+                                />
+                              ) : (
+                                <p>Укажите ссылку сайта в настройках виджета.</p>
+                              )}
+                            </div>
+                          </article>
+                        ))}
+                      </ResponsiveGridLayout>
+                    )}
+                  </div>
                 </div>
 
                 <aside className="template-inspector">
@@ -1103,12 +1183,37 @@ function App() {
                       </label>
 
                       <label>
-                        <span>Текст внутри</span>
-                        <textarea
-                          value={selectedTemplateWidget.content}
-                          onChange={(event) => updateTemplateWidget('content', event.target.value)}
+                        <span>Сайт внутри виджета</span>
+                        <input
+                          value={selectedTemplateWidget.url}
+                          onChange={(event) => updateTemplateWidget('url', event.target.value)}
+                          placeholder="https://example.com"
                         />
                       </label>
+
+                      <div className="template-size-fields">
+                        <label>
+                          <span>Ширина, колонки</span>
+                          <input
+                            min="3"
+                            max="12"
+                            type="number"
+                            value={selectedTemplateWidget.w}
+                            onChange={(event) => updateTemplateWidgetNumber('w', event.target.value)}
+                          />
+                        </label>
+
+                        <label>
+                          <span>Высота, строки</span>
+                          <input
+                            min="2"
+                            max="12"
+                            type="number"
+                            value={selectedTemplateWidget.h}
+                            onChange={(event) => updateTemplateWidgetNumber('h', event.target.value)}
+                          />
+                        </label>
+                      </div>
 
                       <button
                         className="template-remove-button"
