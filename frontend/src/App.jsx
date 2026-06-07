@@ -1341,7 +1341,7 @@ function DashboardApp() {
       <div className="workspace">
         <header className="app-header">
           <div className="header-brand">
-            <h1>Название/лого УК</h1>
+            <h1>UJIN</h1>
           </div>
 
           <div className="header-actions">
