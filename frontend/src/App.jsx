@@ -840,6 +840,10 @@ function App() {
     const height = Number(widgetHeight)
     const id = `widget-${Date.now()}`
     const normalizedUrl = normalizeWidgetUrl(widgetUrl)
+    const nextY = templateWidgets.reduce(
+      (maxY, widget) => Math.max(maxY, widget.y + widget.h),
+      0,
+    )
 
     setTemplateWidgets((currentWidgets) => [
       ...currentWidgets,
@@ -848,7 +852,7 @@ function App() {
         title: widgetTitle || 'Новый виджет',
         url: normalizedUrl,
         x: 0,
-        y: 9999,
+        y: nextY,
         w: size,
         h: height,
       },
@@ -969,14 +973,19 @@ function App() {
   }
 
   function startTemplateWidgetDrag(event, widgetId) {
-    if (!templateCanvasWidth) return
+    if (!templateCanvasWidth) {
+      return
+    }
 
     event.preventDefault()
     event.stopPropagation()
     setSelectedTemplateWidgetId(widgetId)
 
     const widget = templateWidgets.find((item) => item.id === widgetId)
-    if (!widget) return
+
+    if (!widget) {
+      return
+    }
 
     const startClientX = event.clientX
     const startClientY = event.clientY
@@ -984,6 +993,8 @@ function App() {
     const startY = widget.y
 
     function handlePointerMove(pointerEvent) {
+      pointerEvent.preventDefault()
+
       const deltaX = Math.round((pointerEvent.clientX - startClientX) / templateColumnStep)
       const deltaY = Math.round((pointerEvent.clientY - startClientY) / templateRowStep)
 
@@ -991,26 +1002,26 @@ function App() {
         currentWidgets.map((currentWidget) =>
           currentWidget.id === widgetId
             ? {
-              ...currentWidget,
-              x: clampTemplateValue(
-                startX + deltaX,
-                0,
-                TEMPLATE_COLUMNS - currentWidget.w,
-              ),
-              y: Math.max(0, startY + deltaY),
-            }
+                ...currentWidget,
+                x: clampTemplateValue(
+                  startX + deltaX,
+                  0,
+                  TEMPLATE_COLUMNS - currentWidget.w,
+                ),
+                y: Math.max(0, startY + deltaY),
+              }
             : currentWidget,
         ),
       )
     }
 
     function handlePointerUp() {
-      window.removeEventListener('pointermove', handlePointerMove)
-      window.removeEventListener('pointerup', handlePointerUp)
+      window.removeEventListener('mousemove', handlePointerMove)
+      window.removeEventListener('mouseup', handlePointerUp)
     }
 
-    window.addEventListener('pointermove', handlePointerMove)
-    window.addEventListener('pointerup', handlePointerUp)
+    window.addEventListener('mousemove', handlePointerMove)
+    window.addEventListener('mouseup', handlePointerUp)
   }
 
   function updateTemplateWidgetNumber(field, value) {
@@ -1319,7 +1330,7 @@ function App() {
                             >
                               <div
                                 className="template-widget-handle"
-                                onPointerDown={(event) =>
+                                onMouseDown={(event) =>
                                   startTemplateWidgetDrag(event, widget.id)
                                 }
                               >
