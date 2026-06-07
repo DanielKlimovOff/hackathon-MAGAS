@@ -78,6 +78,10 @@ export function listTemplates() {
   return request('/api/v1/templates')
 }
 
+export function getTemplate(templateId) {
+  return request(`/api/v1/templates/${templateId}`)
+}
+
 export function saveTemplate(payload) {
   return request('/api/v1/templates', {
     method: 'POST',
