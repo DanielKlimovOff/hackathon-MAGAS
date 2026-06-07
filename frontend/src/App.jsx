@@ -1318,6 +1318,10 @@ function App() {
                                 }
                               />
                               <span
+                                className="template-widget-resize-handle is-north"
+                                onPointerDown={(event) => startTemplateWidgetResize(event, widget.id, 'n')}
+                              />
+                              <span
                                 className="template-widget-resize-handle is-south"
                                 onPointerDown={(event) =>
                                   startTemplateWidgetResize(event, widget.id, 's')
